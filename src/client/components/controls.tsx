@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { formatShortDate } from '../../shared/dates';
 import type { ISODate } from '../../shared/types';
 
@@ -8,11 +8,14 @@ export function Checkbox({
   onChange,
   label,
   disabled,
+  color,
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
   disabled?: boolean;
+  /** List color for the ring; null = no list (neutral gray). */
+  color?: string | null;
 }) {
   return (
     <button
@@ -21,6 +24,11 @@ export function Checkbox({
       aria-checked={checked}
       aria-label={label}
       className="checkbox"
+      style={
+        color === undefined
+          ? undefined
+          : ({ '--check-color': color ?? 'var(--no-list)' } as CSSProperties)
+      }
       disabled={disabled}
       onClick={(event) => {
         event.stopPropagation();

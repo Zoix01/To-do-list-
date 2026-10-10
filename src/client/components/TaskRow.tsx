@@ -1,29 +1,31 @@
-import { ArrowDown, ArrowUp, Trash2, TriangleAlert } from 'lucide-react';
+import { Trash2, TriangleAlert } from 'lucide-react';
 import { deadlineLabel, isPlannedAfterDeadline, taskFlag } from '../../shared/tasks';
-import type { Task } from '../../shared/types';
+import type { Priority, Task } from '../../shared/types';
 import { useApp } from '../lib/appContext';
 import { useTaskMutations } from '../lib/queries';
-import { ColorDot, Checkbox } from './controls';
+import { Checkbox } from './controls';
 import { useTaskForm } from './TaskFormProvider';
 
-function PriorityMarker({ priority }: { priority: Task['priority'] }) {
-  if (priority === 'high') {
-    return (
-      <span className="task-row__priority task-row__priority--high" title="High priority">
-        <ArrowUp size={14} aria-hidden="true" />
-        <span className="visually-hidden">High priority</span>
-      </span>
-    );
-  }
-  if (priority === 'low') {
-    return (
-      <span className="task-row__priority" title="Low priority">
-        <ArrowDown size={14} aria-hidden="true" />
-        <span className="visually-hidden">Low priority</span>
-      </span>
-    );
-  }
-  return null;
+/** Priorities are shown as numbers: 0 low, 1 medium, 2 high. */
+export const PRIORITY_NUMBER: Record<Priority, number> = { low: 0, medium: 1, high: 2 };
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
+
+function PriorityTag({ priority }: { priority: Priority }) {
+  const label = `${PRIORITY_LABELS[priority]} priority`;
+  return (
+    <span className={`priority priority--${priority}`} title={label}>
+      <span aria-hidden="true">{PRIORITY_NUMBER[priority]}</span>
+      <span className="visually-hidden">{label}</span>
+    </span>
+  );
+}
+
+function titleClass(priority: Priority): string {
+  return priority === 'high' ? 'task-row__title task-row__title--high' : 'task-row__title';
 }
 
 function TaskRow({ task, onComplete }: { task: Task; onComplete: (task: Task) => void }) {
@@ -35,20 +37,15 @@ function TaskRow({ task, onComplete }: { task: Task; onComplete: (task: Task) =>
     <li className="task-row">
       <Checkbox
         checked={false}
-        label={`Complete “${task.title}”`}
+        color={list?.color ?? null}
+        label={`Complete “${task.title}”${list ? ` (${list.name})` : ''}`}
         onChange={() => onComplete(task)}
         disabled={!canEdit}
       />
       <button type="button" className="task-row__main" onClick={() => openEdit(task)}>
-        <span className="task-row__title">{task.title}</span>
+        <span className={titleClass(task.priority)}>{task.title}</span>
         <span className="task-row__meta">
-          <PriorityMarker priority={task.priority} />
-          {isPlannedAfterDeadline(task) && (
-            <span className="task-row__warning" title="Planned after deadline">
-              <TriangleAlert size={14} aria-hidden="true" />
-              <span className="visually-hidden">Planned after deadline</span>
-            </span>
-          )}
+          <PriorityTag priority={task.priority} />
           <span
             className={flag === 'overdue' ? 'task-row__deadline is-overdue' : 'task-row__deadline'}
           >
@@ -56,9 +53,12 @@ function TaskRow({ task, onComplete }: { task: Task; onComplete: (task: Task) =>
           </span>
           {flag === 'overdue' && <span className="flag flag--overdue">Overdue</span>}
           {flag === 'missed_plan' && <span className="flag flag--missed">Missed plan</span>}
-          <span title={list?.name ?? 'No list'}>
-            <ColorDot color={list?.color ?? null} />
-          </span>
+          {isPlannedAfterDeadline(task) && (
+            <span className="task-row__warning" title="Planned after deadline">
+              <TriangleAlert size={14} aria-hidden="true" />
+              <span className="visually-hidden">Planned after deadline</span>
+            </span>
+          )}
         </span>
       </button>
     </li>
@@ -91,17 +91,14 @@ export function CompletedRow({
     <li className="task-row task-row--completed">
       <Checkbox
         checked
-        label={`Restore “${task.title}”`}
+        color={list?.color ?? null}
+        label={`Restore “${task.title}”${list ? ` (${list.name})` : ''}`}
         onChange={onRestore}
         disabled={!canEdit}
       />
       <span className="task-row__main task-row__main--static">
         <span className="task-row__title">{task.title}</span>
-        <span className="task-row__meta">
-          <span title={list?.name ?? 'No list'}>
-            <ColorDot color={list?.color ?? null} />
-          </span>
-        </span>
+        {list && <span className="task-row__meta">{list.name}</span>}
       </span>
       <button
         type="button"

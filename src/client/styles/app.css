@@ -432,21 +432,16 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border: 1.5px solid var(--text-muted);
+  /* The ring carries the list color (--check-color, set per task). */
+  border: 2px solid var(--check-color, var(--text-muted));
   border-radius: 50%;
-  transition:
-    background-color var(--duration) var(--ease-out),
-    border-color var(--duration) var(--ease-out);
+  transition: background-color var(--duration) var(--ease-out);
 }
 
 .checkbox__mark {
-  color: var(--text-muted);
+  color: var(--check-color, var(--text-muted));
   opacity: 0;
   transition: opacity var(--duration) var(--ease-out);
-}
-
-.checkbox:hover:not(:disabled) .checkbox__box {
-  border-color: var(--accent);
 }
 
 .checkbox:hover:not(:disabled) .checkbox__mark {
@@ -454,8 +449,7 @@
 }
 
 .checkbox[aria-checked='true'] .checkbox__box {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--check-color, var(--accent));
 }
 
 .checkbox[aria-checked='true'] .checkbox__mark {
@@ -549,13 +543,18 @@
   cursor: default;
 }
 
+/* Title then metadata on one line, so the eye doesn't travel across the row. */
 .task-row__title {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--text-title);
+}
+
+.task-row__title--high {
+  font-weight: var(--weight-medium);
 }
 
 .task-row--completed .task-row__title {
@@ -579,13 +578,26 @@
   color: var(--danger);
 }
 
-.task-row__priority {
+/* Priority number: 0 low, 1 medium, 2 high. */
+.priority {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border: var(--hairline);
+  border-radius: 4px;
   color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
 }
 
-.task-row__priority--high {
+.priority--high {
+  border-color: var(--text-muted);
   color: var(--text);
+  font-weight: var(--weight-medium);
 }
 
 .task-row__warning {
@@ -609,10 +621,13 @@
 @media (max-width: 559px) {
   .task-row__main {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
     justify-content: center;
-    gap: 0;
+    gap: 2px;
     padding: var(--space-2) var(--space-1);
+  }
+  .task-row__title {
+    max-width: 100%;
   }
   .task-row {
     min-height: 52px;
@@ -910,6 +925,12 @@
   background: var(--surface);
   color: var(--text-muted);
   font-weight: var(--weight-medium);
+}
+
+.segmented__number {
+  margin-right: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
 }
 
 .segmented__option:last-child {

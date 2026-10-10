@@ -9,8 +9,7 @@ import { useTaskMutations } from '../lib/queries';
 import { ColorDot, DateButton, Menu, MenuItem } from './controls';
 import { ConfirmDialog } from './Dialog';
 import type { NewTaskDefaults } from './TaskFormProvider';
-
-const PRIORITY_LABELS: Record<Priority, string> = { low: 'Low', medium: 'Medium', high: 'High' };
+import { PRIORITY_LABELS, PRIORITY_NUMBER } from './TaskRow';
 
 export function TaskForm({
   task,
@@ -157,6 +156,7 @@ export function TaskForm({
                 onClick={() => setPriority(value)}
                 disabled={!canEdit}
               >
+                <span className="segmented__number">{PRIORITY_NUMBER[value]}</span>
                 {PRIORITY_LABELS[value]}
               </button>
             ))}
