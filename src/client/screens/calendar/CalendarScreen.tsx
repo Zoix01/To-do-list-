@@ -5,6 +5,7 @@ import {
   addDays,
   addMonths,
   formatMonthTitle,
+  formatShortDate,
   formatWeekTitle,
   weekDates,
 } from '../../../shared/dates';
@@ -12,6 +13,7 @@ import type { ISODate } from '../../../shared/types';
 import { ScreenHeader, useIsDesktop } from '../../components/AppShell';
 import { useTaskForm } from '../../components/TaskFormProvider';
 import { useApp } from '../../lib/appContext';
+import { useFeedback } from '../../lib/feedback';
 import { useOpenTasks, useTaskMutations } from '../../lib/queries';
 import { CompletedOnDay } from './CompletedOnDay';
 import { GridCalendar } from './GridCalendar';
@@ -28,6 +30,7 @@ export function CalendarScreen() {
   const { data } = useOpenTasks();
   const { plan } = useTaskMutations();
   const { openNew } = useTaskForm();
+  const { showUndo } = useFeedback();
 
   // Phones open on Week, desktop on Month (SPEC §8.2).
   const [view, setView] = useState<CalendarView>(isDesktop ? 'month' : 'week');
@@ -48,7 +51,18 @@ export function CalendarScreen() {
     else setCompletedDay(date);
   };
   const onPlan = (taskId: string, date: ISODate) => {
-    if (canEdit) plan.mutate({ id: taskId, plannedDate: date });
+    const task = tasksById.get(taskId);
+    if (!canEdit || !task) return;
+    plan.mutate({ id: taskId, plannedDate: date });
+    // Planning past the deadline is allowed, but say so (with a way back).
+    if (date > task.deadline) {
+      // A previous planned date that is already over can't be set again; unplan instead.
+      const previous =
+        task.plannedDate && canPlanOn(task.plannedDate, today) ? task.plannedDate : null;
+      showUndo(`Planned after the deadline (${formatShortDate(task.deadline)})`, () =>
+        plan.mutate({ id: taskId, plannedDate: previous }),
+      );
+    }
   };
 
   const phoneWeek = !isDesktop && view === 'week';

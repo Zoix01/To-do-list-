@@ -216,6 +216,7 @@ The metadata follows the title directly (not right-aligned), so everything is re
 - **Month** and **Week** views, toggle at the top. On phone it opens on Week, on desktop on Month.
 - **Week on phones** is a **vertical day list**: 7 stacked rows (Monday at the top), each showing that day's chips at full width so titles stay readable. Chips are dragged between rows with a long-press. Desktop Week (and Month everywhere) uses the normal FullCalendar day grid.
 - **Past days don't accept drops** (planned entries or tray items): you can only plan for today or later.
+- **Planning after the deadline is allowed**, but: the planned chip shows an amber warning badge, and a drop that lands after the deadline shows the message "Planned after the deadline (Wed 14 Oct) · Undo". Undo restores the previous planned date, or unplans the task if it had none (or if the old one has passed).
 - Each uncompleted task can appear twice:
   - **Planned entry** — filled chip in the list color, draggable to any day (sets `plannedDate`, `plannedManual = true`).
   - **Deadline entry** — outlined chip with a flag icon, same color, **not** draggable.

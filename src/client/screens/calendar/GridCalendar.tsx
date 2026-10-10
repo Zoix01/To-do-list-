@@ -19,6 +19,7 @@ interface EntryProps {
   taskId: string;
   kind: EntryKind;
   flag: TaskFlag;
+  afterDeadline: boolean;
 }
 
 /** Month and desktop-week views, built on FullCalendar's day grid. */
@@ -58,17 +59,30 @@ export function GridCalendar({
         editable: canEdit && entry.draggable,
         color: 'transparent',
         order: entry.order,
-        extendedProps: { taskId: entry.taskId, kind: entry.kind, flag: entry.flag },
+        extendedProps: {
+          taskId: entry.taskId,
+          kind: entry.kind,
+          flag: entry.flag,
+          afterDeadline: entry.afterDeadline,
+        },
       })),
     [entries, tasksById, canEdit],
   );
 
   const renderEvent = (info: EventDisplayInfo) => {
-    const { taskId, kind, flag } = info.event.extendedProps as EntryProps;
+    const { taskId, kind, flag, afterDeadline } = info.event.extendedProps as EntryProps;
     const task = tasksById.get(taskId);
     if (!task) return null;
     const color = task.listId ? (listsById.get(task.listId)?.color ?? null) : null;
-    return <CalendarChip task={task} kind={kind} flag={flag} color={color} />;
+    return (
+      <CalendarChip
+        task={task}
+        kind={kind}
+        flag={flag}
+        color={color}
+        afterDeadline={afterDeadline}
+      />
+    );
   };
 
   return (

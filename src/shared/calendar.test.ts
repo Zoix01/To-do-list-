@@ -92,6 +92,22 @@ describe('calendarEntries', () => {
     expect(order[sooner.id]).toBeLessThan(order[later.id]!);
   });
 
+  it('marks a planned entry after the deadline (and only that entry)', () => {
+    const late = task({ deadline: '2026-10-15', plannedDate: '2026-10-18' });
+    const fine = task({ deadline: '2026-10-15', plannedDate: '2026-10-14' });
+    const entries = calendarEntries([late, fine], TODAY);
+    const flags = (t: Task) =>
+      entries.filter((e) => e.taskId === t.id).map((e) => [e.kind, e.afterDeadline]);
+    expect(flags(late)).toEqual([
+      ['planned', true],
+      ['deadline', false],
+    ]);
+    expect(flags(fine)).toEqual([
+      ['planned', false],
+      ['deadline', false],
+    ]);
+  });
+
   it('gives every entry a unique id', () => {
     const tasks = [
       task({ plannedDate: '2026-10-11' }),

@@ -1,4 +1,4 @@
-import { compareByDeadline, taskFlag } from './tasks';
+import { compareByDeadline, isPlannedAfterDeadline, taskFlag } from './tasks';
 import type { ISODate, Task, TaskFlag } from './types';
 
 /**
@@ -16,6 +16,8 @@ export interface CalendarEntry {
   date: ISODate;
   kind: EntryKind;
   flag: TaskFlag;
+  /** Planned entry that lies after the task's deadline (shown with a warning). */
+  afterDeadline: boolean;
   draggable: boolean;
   /** Position within a day: overdue first, then by deadline and title. */
   order: number;
@@ -34,6 +36,7 @@ export function calendarEntries(tasks: readonly Task[], today: ISODate): Calenda
       date,
       kind,
       flag,
+      afterDeadline: kind === 'planned' && isPlannedAfterDeadline(task),
       draggable: kind !== 'deadline',
       order,
     });

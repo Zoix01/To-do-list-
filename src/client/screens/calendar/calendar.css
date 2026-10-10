@@ -131,6 +131,16 @@
   flex-shrink: 0;
 }
 
+/* Planned after the deadline: amber triangle on a dark badge, readable on any list color. */
+.chip__warn {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 2px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--warning);
+}
+
 .chip__title {
   min-width: 0;
   overflow: hidden;

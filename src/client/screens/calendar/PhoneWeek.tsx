@@ -55,6 +55,7 @@ function WeekChip({
         kind={entry.kind}
         flag={entry.flag}
         color={chipColor(task, listsById)}
+        afterDeadline={entry.afterDeadline}
       />
     </button>
   );
