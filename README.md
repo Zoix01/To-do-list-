@@ -36,6 +36,16 @@ npm run dev                                # start the app at http://localhost:5
 
 On Windows PowerShell, use `copy` instead of `cp`.
 
+If PowerShell says _"npm.ps1 cannot be loaded because running scripts is disabled on this system"_, allow local scripts for your user once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Or, without changing the setting, type `npm.cmd` instead of `npm` (for example `npm.cmd run dev`).
+
+`npm run dev` keeps running until you stop it (Ctrl+C). The app is only reachable at http://localhost:5173 while it runs.
+
 The local database lives in `.wrangler/` and is separate from your deployed one. You don't need a real database ID to develop locally; the placeholder in `wrangler.jsonc` works.
 
 ## Run the tests
