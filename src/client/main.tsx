@@ -22,6 +22,8 @@ createRoot(document.getElementById('root')!).render(
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{ persister, maxAge: PERSIST_MAX_AGE, buster: 'v1' }}
+      // Data restored from the device may be outdated (edited on another device): refresh it.
+      onSuccess={() => void queryClient.invalidateQueries()}
     >
       <FeedbackProvider>
         <RouterProvider>
