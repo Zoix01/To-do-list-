@@ -131,7 +131,9 @@ export function HabitDetailScreen({ id }: { id: string }) {
   }
 
   const checks = new Set(habit.checks);
-  const startedOn = dateInZone(new Date(habit.createdAt), timeZone);
+  // The habit counts as started at its creation, or at its earliest tick if back-filled before.
+  const createdOn = dateInZone(new Date(habit.createdAt), timeZone);
+  const startedOn = habit.checks[0] && habit.checks[0] < createdOn ? habit.checks[0] : createdOn;
   const current = currentStreak(habit, checks, today);
   const best = bestStreak(habit, checks, today);
   const rate = completionRate(habit, checks, today, startedOn);
