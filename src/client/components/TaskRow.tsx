@@ -28,7 +28,25 @@ function titleClass(priority: Priority): string {
   return priority === 'high' ? 'task-row__title task-row__title--high' : 'task-row__title';
 }
 
-function TaskRow({ task, onComplete }: { task: Task; onComplete: (task: Task) => void }) {
+/** In All tasks the circle shows priority instead of the list (SPEC §8.3). */
+const PRIORITY_COLOR: Record<Priority, string> = {
+  high: 'var(--danger)',
+  medium: 'var(--warning)',
+  low: 'var(--no-list)',
+};
+
+/** What the checkbox ring color means: the task's list, or its priority. */
+export type RingColor = 'list' | 'priority';
+
+function TaskRow({
+  task,
+  onComplete,
+  ringColor,
+}: {
+  task: Task;
+  onComplete: (task: Task) => void;
+  ringColor: RingColor;
+}) {
   const { today, listsById, canEdit } = useApp();
   const { openEdit } = useTaskForm();
   const flag = taskFlag(task, today);
@@ -37,7 +55,7 @@ function TaskRow({ task, onComplete }: { task: Task; onComplete: (task: Task) =>
     <li className="task-row">
       <Checkbox
         checked={false}
-        color={list?.color ?? null}
+        color={ringColor === 'priority' ? PRIORITY_COLOR[task.priority] : (list?.color ?? null)}
         label={`Complete “${task.title}”${list ? ` (${list.name})` : ''}`}
         onChange={() => onComplete(task)}
         disabled={!canEdit}
@@ -65,12 +83,17 @@ function TaskRow({ task, onComplete }: { task: Task; onComplete: (task: Task) =>
   );
 }
 
-export function TaskList({ tasks }: { tasks: Task[] }) {
+export function TaskList({ tasks, ringColor = 'list' }: { tasks: Task[]; ringColor?: RingColor }) {
   const { complete } = useTaskMutations();
   return (
     <ul className="task-list">
       {tasks.map((task) => (
-        <TaskRow key={task.id} task={task} onComplete={(t) => complete.mutate(t)} />
+        <TaskRow
+          key={task.id}
+          task={task}
+          ringColor={ringColor}
+          onComplete={(t) => complete.mutate(t)}
+        />
       ))}
     </ul>
   );

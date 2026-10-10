@@ -83,11 +83,11 @@ export function AllTasksScreen() {
               {group.list?.name ?? 'No list'}
               <span className="section__count">{group.tasks.length}</span>
             </h2>
-            <TaskList tasks={group.tasks} />
+            <TaskList tasks={group.tasks} ringColor="priority" />
           </section>
         ))
       ) : (
-        <TaskList tasks={sortTasks(filtered, sort, today)} />
+        <TaskList tasks={sortTasks(filtered, sort, today)} ringColor="priority" />
       )}
     </>
   );
