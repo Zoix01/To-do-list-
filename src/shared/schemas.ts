@@ -30,6 +30,8 @@ export const taskCreateSchema = z.object({
 });
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
 
+export const taskIdsSchema = z.object({ ids: z.array(z.string()).min(1).max(10_000) });
+
 export const taskUpdateSchema = z
   .object({
     title,

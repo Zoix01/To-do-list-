@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { taskCreateSchema, taskUpdateSchema } from '../../shared/schemas';
+import { taskCreateSchema, taskIdsSchema, taskUpdateSchema } from '../../shared/schemas';
 import { applyPlanningChange, deadlineError, newTaskPlanning } from '../../shared/tasks';
 import type { Task } from '../../shared/types';
 import { lists, tasks } from '../db/schema';
@@ -57,6 +57,22 @@ export const taskRoutes = new Hono<AppEnv>()
     };
     await db.insert(tasks).values(task);
     return c.json(task, 201);
+  })
+  .post('/delete-completed', async (c) => {
+    // Deletes the given tasks, but only those that are completed.
+    const { ids } = await readBody(c, taskIdsSchema);
+    const db = c.get('db');
+    // D1 allows at most 100 bound parameters per statement.
+    const statements = [];
+    for (let i = 0; i < ids.length; i += 90) {
+      const chunk = ids.slice(i, i + 90);
+      statements.push(
+        db.delete(tasks).where(and(inArray(tasks.id, chunk), isNotNull(tasks.completedAt))),
+      );
+    }
+    const [first, ...rest] = statements;
+    if (first) await db.batch([first, ...rest]);
+    return c.body(null, 204);
   })
   .patch('/:id', async (c) => {
     const input = await readBody(c, taskUpdateSchema);

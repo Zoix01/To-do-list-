@@ -102,7 +102,26 @@ export function useTaskMutations() {
     onSettled: invalidate,
   });
 
-  return { create, update, complete, uncomplete, remove };
+  const removeCompleted = useMutation({
+    mutationFn: (ids: string[]) =>
+      api('/tasks/delete-completed', { method: 'POST', body: { ids } }),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: keys.completedTasks });
+      const previous = queryClient.getQueryData<Task[]>(keys.completedTasks);
+      const gone = new Set(ids);
+      queryClient.setQueryData<Task[]>(keys.completedTasks, (tasks) =>
+        tasks?.filter((task) => !gone.has(task.id)),
+      );
+      return () => queryClient.setQueryData(keys.completedTasks, previous);
+    },
+    onError: (error, _ids, restore) => {
+      restore?.();
+      onError(error);
+    },
+    onSettled: invalidate,
+  });
+
+  return { create, update, complete, uncomplete, remove, removeCompleted };
 }
 
 export function useListMutations() {

@@ -1,8 +1,9 @@
-import { ChevronDown, ListFilter } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { useEffect } from 'react';
 import { groupByList, sortTasks, type SortMode } from '../../shared/tasks';
 import { AddTaskButton, ScreenHeader } from '../components/AppShell';
 import { ColorDot, Menu, MenuItem } from '../components/controls';
+import { ListFilterMenu, NO_LIST, useListFilter } from '../components/ListFilter';
 import { TaskList } from '../components/TaskRow';
 import { useApp } from '../lib/appContext';
 import { useStoredState } from '../lib/hooks';
@@ -15,18 +16,12 @@ const SORT_LABELS: Record<SortMode, string> = {
   list: 'List',
 };
 
-/** Filter value for loose tasks. */
-const NO_LIST = 'none';
-
 export function AllTasksScreen() {
-  const { today, lists, listsById } = useApp();
+  const { today, lists } = useApp();
   const { data: tasks } = useOpenTasks();
   const { location, navigate } = useRouter();
   const [sort, setSort] = useStoredState<SortMode>('allTasks.sort', 'deadline');
-  const [storedFilter, setFilter] = useStoredState<string[]>('allTasks.filter', []);
-
-  // Ignore lists that have since been deleted.
-  const filter = storedFilter.filter((id) => id === NO_LIST || listsById.has(id));
+  const { filter, setFilter, matches } = useListFilter('allTasks.filter');
 
   // Sidebar links (/tasks?list=…) select a single list.
   const listParam = location.search.get('list');
@@ -37,26 +32,7 @@ export function AllTasksScreen() {
     }
   }, [listParam]);
 
-  const filtered = useMemo(
-    () =>
-      (tasks ?? []).filter(
-        (task) => filter.length === 0 || filter.includes(task.listId ?? NO_LIST),
-      ),
-    [tasks, filter],
-  );
-
-  const toggleFilter = (id: string) =>
-    setFilter(filter.includes(id) ? filter.filter((value) => value !== id) : [...filter, id]);
-
-  const filterLabel =
-    filter.length === 0
-      ? 'All lists'
-      : filter.length === 1
-        ? filter[0] === NO_LIST
-          ? 'No list'
-          : (listsById.get(filter[0]!)?.name ?? 'All lists')
-        : `${filter.length} lists`;
-
+  const filtered = (tasks ?? []).filter(matches);
   const singleList = filter.length === 1 && filter[0] !== NO_LIST ? filter[0] : undefined;
 
   return (
@@ -89,45 +65,7 @@ export function AllTasksScreen() {
                 ))
               }
             </Menu>
-            <Menu
-              label="Filter by list"
-              align="end"
-              closeOnSelect={false}
-              buttonContent={
-                <>
-                  <ListFilter size={14} aria-hidden="true" />
-                  {filterLabel}
-                </>
-              }
-            >
-              {() => (
-                <>
-                  <MenuItem selected={filter.length === 0} onSelect={() => setFilter([])}>
-                    All lists
-                  </MenuItem>
-                  <div className="menu__divider" />
-                  {lists.map((list) => (
-                    <MenuItem
-                      key={list.id}
-                      role="menuitemcheckbox"
-                      selected={filter.includes(list.id)}
-                      onSelect={() => toggleFilter(list.id)}
-                    >
-                      <ColorDot color={list.color} />
-                      {list.name}
-                    </MenuItem>
-                  ))}
-                  <MenuItem
-                    role="menuitemcheckbox"
-                    selected={filter.includes(NO_LIST)}
-                    onSelect={() => toggleFilter(NO_LIST)}
-                  >
-                    <ColorDot color={null} />
-                    No list
-                  </MenuItem>
-                </>
-              )}
-            </Menu>
+            <ListFilterMenu filter={filter} setFilter={setFilter} />
             <AddTaskButton listId={singleList} />
           </>
         }
