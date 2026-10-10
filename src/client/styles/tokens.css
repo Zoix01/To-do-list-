@@ -1,0 +1,64 @@
+/* Design tokens (SPEC §14). Use only these values in the rest of the CSS. */
+:root {
+  color-scheme: dark;
+
+  /* Palette "Ember" */
+  --bg: #1c1916;
+  --surface: #26221e;
+  --surface-raised: #302b26;
+  --border: #3a342e;
+  --text: #ede6db;
+  --text-muted: #9c9286;
+  --accent: #e8925a;
+  --danger: #d9675a;
+  --warning: #d9b25a;
+  /* Text on accent / danger fills */
+  --on-accent: var(--bg);
+  /* Loose tasks (no list) */
+  --no-list: var(--text-muted);
+
+  /* Typography */
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --text-meta: 13px;
+  --text-body: 14px;
+  --text-title: 15px;
+  --text-screen: 18px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-screen: 600;
+  --line-height: 1.4;
+
+  /* Spacing: 4px grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Shape */
+  --radius: 6px;
+  --radius-dialog: 10px;
+  --hairline: 1px solid var(--border);
+
+  /* Sizes */
+  --row-height: 40px;
+  --tap-target: 44px;
+  --control-height: 32px;
+  --icon: 16px;
+  --icon-lg: 18px;
+  --dot: 8px;
+  --sidebar-width: 232px;
+  --content-width: 760px;
+  --tabbar-height: 56px;
+
+  /* Elevation: popovers and dialogs only */
+  --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.35);
+
+  /* Motion */
+  --duration: 160ms;
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+}
