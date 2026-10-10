@@ -87,11 +87,13 @@ RecurringTask  (template for weekly tasks)
   mode              'fixed' | 'flexible'
   weekday           1–7 (Mon–Sun), only for 'fixed'
   active            boolean (I can pause/delete it)
+  activeFrom        YYYY-MM-DD — date it was created or last resumed (§6)
+  generatedThrough  YYYY-MM-DD, nullable — Monday of the latest week already generated (§6)
   createdAt
 
 Habit
-  id, name, color
-  icon              name of an icon from the app's icon set (see §13)
+  id, name, color   (color from the same 12-color palette as lists)
+  icon              nullable; name of an icon from the app's icon set — stays empty until Phase 5 (§13)
   frequency         'daily' | 'weekdays' | 'per_week' | 'per_month'
   weekdays          array of 1–7, only for 'weekdays'
   target            integer, only for 'per_week' / 'per_month' (e.g. 4 = 4×/week)
@@ -157,6 +159,9 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
 - **Flexible** ("any day this week"): `deadline = Sunday` of the instance's week; `plannedDate = null` (unplanned) until I drag it onto a day.
 - Missed weeks: if an instance is not completed by its deadline it gets the normal red flag and stays. The next week's instance is still created when that week begins.
 - Editing a template affects future instances only (not already-created ones). Pausing or deleting a template stops new instances; existing uncompleted instances remain.
+- **First week:** a fixed template whose weekday has already passed in the week it is created (or resumed) starts **next week** — no instance is created already overdue. Implemented with `activeFrom`: a fixed instance is generated only if its date is ≥ `activeFrom`.
+- **Each week is generated once** (`generatedThrough`): deleting an instance (e.g. to skip a week) does not bring it back on the next load. A unique index on (`recurringId`, `weekStart`) also guarantees no duplicates.
+- Instances are normal tasks everywhere (Today, All tasks, calendar, editing). They show a small **repeat icon** after the title in task rows and the task panel.
 - Weekly tasks are managed in a **Weekly** screen: list of templates with mode/weekday, plus "add weekly task".
 
 ---
@@ -169,13 +174,19 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
   - weekdays → if today is one of its weekdays
   - per_week → if this week's check count < target
   - per_month → if this month's check count < target
-- Ticking a habit creates a HabitCheck for that date; un-ticking removes it. On a habit's detail screen I can tick/untick past dates (in case I forgot).
+- Ticking a habit creates a HabitCheck for that date; un-ticking removes it. On a habit's detail screen I can tick/untick past dates (in case I forgot). Future dates can't be ticked.
+- The Today screen shows a habit if it is **due today or already ticked today** (so it can be un-ticked).
+- Ticking a day that isn't scheduled (e.g. a weekdays habit on a day off) is allowed but doesn't affect the streak.
+- Targets: 1–7 for per_week, 1–31 for per_month; a weekdays habit needs at least one weekday.
+- Archived habits can be restored or deleted permanently (with confirmation). Deleting removes its checks.
 - **Streaks** (pure functions, unit tested):
   - daily / weekdays: number of consecutive *scheduled* days that have a check, counting back from today. If today is scheduled but not yet ticked, start counting from the previous scheduled day (today doesn't break the streak until it's over).
   - per_week: number of consecutive weeks where checks ≥ target. The current week counts only if already met; an unfinished current week doesn't break the streak.
   - per_month: same as per_week, with calendar months.
   - Show the unit: "12 days", "5 weeks", "3 months".
 - Habit detail shows: current streak, best streak, completion rate over the last 30 days (or last 12 weeks / 12 months for per_week / per_month), and a heatmap-style calendar of checks.
+  - **Completion rate** counts only periods since the habit was created (or its earliest check, if earlier). The current period counts only if already met.
+  - The calendar is a **month grid** with prev/next month: ticked days filled in the habit color, scheduled past days without a tick outlined, future days disabled. Tapping a day (today or earlier) ticks / un-ticks it.
 - Habits do **not** appear in the calendar.
 
 ---
