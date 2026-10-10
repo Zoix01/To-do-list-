@@ -1,0 +1,26 @@
+// Copy this file to wrangler.jsonc (gitignored) and fill in your own values.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "planner",
+  "main": "./src/worker/index.ts",
+  "compatibility_date": "2026-10-10",
+  "assets": {
+    // Unknown paths serve index.html so client-side routes work.
+    "not_found_handling": "single-page-application",
+    // Only /api/* reaches the Worker; everything else is served as static files.
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    // IANA time zone used to decide what "today" is.
+    "TIMEZONE": "Europe/Prague"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "planner",
+      // Printed by `npx wrangler d1 create planner`.
+      "database_id": "REPLACE_WITH_YOUR_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

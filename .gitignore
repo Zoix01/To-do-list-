@@ -1,0 +1,19 @@
+node_modules/
+dist/
+dev-dist/
+.wrangler/
+*.tsbuildinfo
+
+# Personal config and secrets
+wrangler.jsonc
+wrangler.toml
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

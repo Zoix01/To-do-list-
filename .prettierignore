@@ -1,0 +1,6 @@
+dist/
+dev-dist/
+migrations/
+.wrangler/
+package-lock.json
+SPEC.md
