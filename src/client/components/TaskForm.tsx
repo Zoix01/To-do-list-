@@ -1,7 +1,7 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import type { TaskUpdateInput } from '../../shared/schemas';
-import { deadlineError, defaultPlannedDate, plannedDateError } from '../../shared/tasks';
+import { deadlineError, plannedDateError } from '../../shared/tasks';
 import { PRIORITIES, type ISODate, type Priority, type Task } from '../../shared/types';
 import { errorMessage } from '../lib/api';
 import { useApp } from '../lib/appContext';
@@ -35,13 +35,9 @@ export function TaskForm({
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // What the planned date will be after saving (mirrors the server rules, SPEC §5.1).
-  const isAuto = plannedOverride === undefined && !task?.plannedManual;
-  let plannedDate: ISODate | null;
-  if (plannedOverride !== undefined) plannedDate = plannedOverride;
-  else if (task && (task.plannedManual || deadline === task.deadline))
-    plannedDate = task.plannedDate;
-  else plannedDate = deadline ? defaultPlannedDate(deadline, today) : null;
+  // New tasks start unplanned; a deadline change never moves the planned date (SPEC §5.1).
+  const plannedDate: ISODate | null =
+    plannedOverride !== undefined ? plannedOverride : (task?.plannedDate ?? null);
 
   const deadlineProblem = deadline ? deadlineError(deadline, today, task?.deadline) : null;
   // Only a planned date picked in this form is checked; an existing past one may stay.
@@ -128,11 +124,10 @@ export function TaskForm({
             label="Planned date"
             value={plannedDate}
             onChange={setPlannedOverride}
-            placeholder={deadline ? 'Not planned' : 'Set a deadline first'}
+            placeholder="Not planned"
             min={today}
-            disabled={!canEdit || !deadline}
+            disabled={!canEdit}
           />
-          {plannedDate && isAuto && <span className="muted">auto</span>}
           {plannedDate && (
             <button
               type="button"

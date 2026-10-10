@@ -54,7 +54,7 @@ export const taskRoutes = new Hono<AppEnv>()
       title: input.title,
       notes: emptyToNull(input.notes),
       priority: input.priority ?? 'medium',
-      ...newTaskPlanning(input.deadline, input.plannedDate, today),
+      ...newTaskPlanning(input.deadline, input.plannedDate),
       recurringId: null,
       weekStart: null,
       completedAt: null,
@@ -108,7 +108,7 @@ export const taskRoutes = new Hono<AppEnv>()
       .set({
         ...rest,
         ...(input.notes !== undefined && { notes: emptyToNull(input.notes) }),
-        ...applyPlanningChange(existing, { deadline, plannedDate }, today),
+        ...applyPlanningChange(existing, { deadline, plannedDate }),
         updatedAt: new Date().toISOString(),
       })
       .where(eq(tasks.id, existing.id))

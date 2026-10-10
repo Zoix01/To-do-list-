@@ -1,14 +1,11 @@
-import { addDays, dateInZone, daysBetween, formatShortDate, isISODate, maxDate } from './dates';
+import { dateInZone, daysBetween, formatShortDate, isISODate } from './dates';
 import type { ISODate, List, Priority, Task, TaskFlag } from './types';
 
 // ---------------------------------------------------------------------------
 // Planned date (SPEC §5.1)
 // ---------------------------------------------------------------------------
 
-/** `max(today, deadline − 1 day)` */
-export function defaultPlannedDate(deadline: ISODate, today: ISODate): ISODate {
-  return maxDate(today, addDays(deadline, -1));
-}
+// There is no automatic planned date: a task is planned only when I set one.
 
 export interface Planning {
   deadline: ISODate;
@@ -16,35 +13,30 @@ export interface Planning {
   plannedManual: boolean;
 }
 
-/**
- * Planning fields for a new task. Passing `plannedDate` (a date or null for
- * "unplanned") counts as setting it by hand.
- */
+/** Planning fields for a new task: unplanned unless a planned date is given. */
 export function newTaskPlanning(
   deadline: ISODate,
   plannedDate: ISODate | null | undefined,
-  today: ISODate,
 ): Planning {
-  if (plannedDate !== undefined) return { deadline, plannedDate, plannedManual: true };
-  return { deadline, plannedDate: defaultPlannedDate(deadline, today), plannedManual: false };
+  return {
+    deadline,
+    plannedDate: plannedDate ?? null,
+    plannedManual: plannedDate !== undefined && plannedDate !== null,
+  };
 }
 
 /**
  * Applies a deadline and/or planned-date change. Setting `plannedDate`
- * (including null = unplan) marks it manual; a deadline change recomputes the
- * planned date only while it is still automatic.
+ * (including null = unplan) marks it manual; a deadline change never moves
+ * the planned date.
  */
 export function applyPlanningChange(
   current: Planning,
   change: { deadline?: ISODate; plannedDate?: ISODate | null },
-  today: ISODate,
 ): Planning {
   const deadline = change.deadline ?? current.deadline;
   if (change.plannedDate !== undefined) {
     return { deadline, plannedDate: change.plannedDate, plannedManual: true };
-  }
-  if (deadline !== current.deadline && !current.plannedManual) {
-    return { deadline, plannedDate: defaultPlannedDate(deadline, today), plannedManual: false };
   }
   return { deadline, plannedDate: current.plannedDate, plannedManual: current.plannedManual };
 }

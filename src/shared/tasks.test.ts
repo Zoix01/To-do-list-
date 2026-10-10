@@ -5,7 +5,6 @@ import {
   czechCollator,
   deadlineError,
   deadlineLabel,
-  defaultPlannedDate,
   groupByList,
   groupByPriority,
   groupCompleted,
@@ -43,107 +42,71 @@ function task(fields: Partial<Task> = {}): Task {
 }
 
 function list(id: string, sortOrder: number): List {
-  return { id, name: id, color: '#D9675A', sortOrder, createdAt: '2026-10-01T10:00:00.000Z' };
+  return { id, name: id, color: '#6A9FB5', sortOrder, createdAt: '2026-10-01T10:00:00.000Z' };
 }
 
 const titles = (tasks: Task[]) => tasks.map((t) => t.title);
 
-describe('defaultPlannedDate', () => {
-  it('plans the day before a deadline tomorrow → today', () => {
-    expect(defaultPlannedDate('2026-10-11', TODAY)).toBe('2026-10-10');
-  });
-  it('plans today for a deadline today', () => {
-    expect(defaultPlannedDate('2026-10-10', TODAY)).toBe('2026-10-10');
-  });
-  it('plans today for a deadline in the past', () => {
-    expect(defaultPlannedDate('2026-10-01', TODAY)).toBe('2026-10-10');
-  });
-  it('plans the day before a far-future deadline', () => {
-    expect(defaultPlannedDate('2027-03-01', TODAY)).toBe('2027-02-28');
-  });
-  it('crosses month and year boundaries', () => {
-    expect(defaultPlannedDate('2027-01-01', TODAY)).toBe('2026-12-31');
-  });
-});
-
 describe('newTaskPlanning', () => {
-  it('auto-plans when no planned date is given', () => {
-    expect(newTaskPlanning('2026-10-15', undefined, TODAY)).toEqual({
+  it('leaves a new task unplanned when no planned date is given', () => {
+    expect(newTaskPlanning('2026-10-15', undefined)).toEqual({
       deadline: '2026-10-15',
-      plannedDate: '2026-10-14',
+      plannedDate: null,
       plannedManual: false,
     });
   });
-  it('keeps an explicit planned date as manual', () => {
-    expect(newTaskPlanning('2026-10-15', '2026-10-12', TODAY)).toEqual({
+  it('leaves it unplanned for an explicit null', () => {
+    expect(newTaskPlanning('2026-10-15', null).plannedDate).toBeNull();
+  });
+  it('keeps an explicit planned date as set by hand', () => {
+    expect(newTaskPlanning('2026-10-15', '2026-10-12')).toEqual({
       deadline: '2026-10-15',
       plannedDate: '2026-10-12',
-      plannedManual: true,
-    });
-  });
-  it('treats an explicit null as "unplanned" by hand', () => {
-    expect(newTaskPlanning('2026-10-15', null, TODAY)).toEqual({
-      deadline: '2026-10-15',
-      plannedDate: null,
       plannedManual: true,
     });
   });
 });
 
 describe('applyPlanningChange', () => {
-  const auto = { deadline: '2026-10-15', plannedDate: '2026-10-14', plannedManual: false };
-  const manual = { deadline: '2026-10-15', plannedDate: '2026-10-12', plannedManual: true };
+  const planned = { deadline: '2026-10-15', plannedDate: '2026-10-12', plannedManual: true };
+  const unplanned = { deadline: '2026-10-15', plannedDate: null, plannedManual: false };
+  // Tasks created before automatic planning was removed may still have one.
+  const legacyAuto = { deadline: '2026-10-15', plannedDate: '2026-10-14', plannedManual: false };
 
-  it('recomputes the planned date on deadline change while automatic', () => {
-    expect(applyPlanningChange(auto, { deadline: '2026-10-20' }, TODAY)).toEqual({
+  it('never moves the planned date when the deadline changes', () => {
+    expect(applyPlanningChange(planned, { deadline: '2026-10-20' })).toEqual({
+      ...planned,
       deadline: '2026-10-20',
-      plannedDate: '2026-10-19',
-      plannedManual: false,
+    });
+    expect(applyPlanningChange(legacyAuto, { deadline: '2026-10-20' })).toEqual({
+      ...legacyAuto,
+      deadline: '2026-10-20',
     });
   });
-  it('recomputes with today as the floor', () => {
-    expect(applyPlanningChange(auto, { deadline: '2026-10-10' }, TODAY).plannedDate).toBe(
-      '2026-10-10',
-    );
-  });
-  it('keeps a manual planned date on deadline change', () => {
-    expect(applyPlanningChange(manual, { deadline: '2026-10-20' }, TODAY)).toEqual({
-      deadline: '2026-10-20',
-      plannedDate: '2026-10-12',
-      plannedManual: true,
-    });
-  });
-  it('keeps a manual "unplanned" state on deadline change', () => {
-    const unplanned = { ...manual, plannedDate: null };
-    expect(applyPlanningChange(unplanned, { deadline: '2026-10-20' }, TODAY).plannedDate).toBe(
-      null,
-    );
+  it('keeps an unplanned task unplanned when the deadline changes', () => {
+    expect(applyPlanningChange(unplanned, { deadline: '2026-10-20' }).plannedDate).toBeNull();
   });
   it('marks the plan manual when the planned date is set', () => {
-    expect(applyPlanningChange(auto, { plannedDate: '2026-10-11' }, TODAY)).toEqual({
+    expect(applyPlanningChange(unplanned, { plannedDate: '2026-10-11' })).toEqual({
       deadline: '2026-10-15',
       plannedDate: '2026-10-11',
       plannedManual: true,
     });
   });
   it('unplans by setting null', () => {
-    expect(applyPlanningChange(auto, { plannedDate: null }, TODAY)).toEqual({
+    expect(applyPlanningChange(planned, { plannedDate: null })).toEqual({
       deadline: '2026-10-15',
       plannedDate: null,
       plannedManual: true,
     });
   });
-  it('uses the given planned date when both change at once', () => {
+  it('applies both when deadline and planned date change at once', () => {
     expect(
-      applyPlanningChange(auto, { deadline: '2026-10-20', plannedDate: '2026-10-11' }, TODAY),
+      applyPlanningChange(unplanned, { deadline: '2026-10-20', plannedDate: '2026-10-11' }),
     ).toEqual({ deadline: '2026-10-20', plannedDate: '2026-10-11', plannedManual: true });
   });
-  it('does nothing when the deadline is unchanged', () => {
-    const drifted = { ...auto, plannedDate: '2026-10-05' };
-    expect(applyPlanningChange(drifted, { deadline: '2026-10-15' }, TODAY)).toEqual(drifted);
-  });
   it('returns only the planning fields, even when given a whole task', () => {
-    expect(applyPlanningChange(task({ title: 'x', ...manual }), {}, TODAY)).toEqual(manual);
+    expect(applyPlanningChange(task({ title: 'x', ...planned }), {})).toEqual(planned);
   });
 });
 
