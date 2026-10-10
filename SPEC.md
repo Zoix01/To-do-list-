@@ -221,7 +221,8 @@ The metadata follows the title directly (not right-aligned), so everything is re
 - Overdue chips show their red/orange flag.
 - Completing a task from a calendar chip (checkbox inside the chip or in the popup on tap) removes both entries.
 - A side tray (desktop) / bottom sheet (phone) lists **unplanned tasks** (including flexible weekly instances) that I can drag onto a day.
-- Tapping an empty day opens "new task" with that day as the deadline preselected (I can change it).
+- Tapping an empty day **today or later** opens "new task" with that day as the deadline preselected (I can change it).
+- Tapping a **past** day opens a short list of the tasks I **completed on that day** (completion date in the configured time zone), read-only except for undo. It does not create a task, because past deadlines are not allowed (§5.1). In deadline pickers, past days are simply not selectable.
 - Touch drag must work on mobile (long-press to drag).
 
 ### 8.3 All tasks
