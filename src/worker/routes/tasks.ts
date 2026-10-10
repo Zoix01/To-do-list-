@@ -1,7 +1,12 @@
 import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { taskCreateSchema, taskIdsSchema, taskUpdateSchema } from '../../shared/schemas';
-import { applyPlanningChange, deadlineError, newTaskPlanning } from '../../shared/tasks';
+import {
+  applyPlanningChange,
+  deadlineError,
+  newTaskPlanning,
+  plannedDateError,
+} from '../../shared/tasks';
 import type { Task } from '../../shared/types';
 import { lists, tasks } from '../db/schema';
 import type { AppEnv, Db } from '../env';
@@ -36,7 +41,8 @@ export const taskRoutes = new Hono<AppEnv>()
   .post('/', async (c) => {
     const input = await readBody(c, taskCreateSchema);
     const today = c.get('today');
-    const error = deadlineError(input.deadline, today);
+    const error =
+      deadlineError(input.deadline, today) ?? plannedDateError(input.plannedDate ?? null, today);
     if (error) throw badRequest(error);
     const db = c.get('db');
     await assertListExists(db, input.listId);
@@ -88,6 +94,10 @@ export const taskRoutes = new Hono<AppEnv>()
     const today = c.get('today');
     if (input.deadline !== undefined) {
       const error = deadlineError(input.deadline, today, existing.deadline);
+      if (error) throw badRequest(error);
+    }
+    if (input.plannedDate !== undefined) {
+      const error = plannedDateError(input.plannedDate, today, existing.plannedDate);
       if (error) throw badRequest(error);
     }
     if (input.listId !== undefined) await assertListExists(db, input.listId);

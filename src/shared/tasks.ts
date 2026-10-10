@@ -65,6 +65,23 @@ export function deadlineError(
   return null;
 }
 
+/**
+ * Returns an error message, or null if the planned date is acceptable.
+ * null (unplanned) is always fine. A past date is rejected unless it is the
+ * task's unchanged current planned date (pass `currentPlanned` when editing).
+ */
+export function plannedDateError(
+  plannedDate: ISODate | null,
+  today: ISODate,
+  currentPlanned?: ISODate | null,
+): string | null {
+  if (plannedDate === null) return null;
+  if (!isISODate(plannedDate)) return 'Planned date must be a valid date';
+  if (currentPlanned !== undefined && plannedDate === currentPlanned) return null;
+  if (plannedDate < today) return 'Planned date cannot be in the past';
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Flags (SPEC §5.2)
 // ---------------------------------------------------------------------------

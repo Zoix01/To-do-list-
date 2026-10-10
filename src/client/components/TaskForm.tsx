@@ -1,7 +1,7 @@
 import { ChevronDown, TriangleAlert } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import type { TaskUpdateInput } from '../../shared/schemas';
-import { deadlineError, defaultPlannedDate } from '../../shared/tasks';
+import { deadlineError, defaultPlannedDate, plannedDateError } from '../../shared/tasks';
 import { PRIORITIES, type ISODate, type Priority, type Task } from '../../shared/types';
 import { errorMessage } from '../lib/api';
 import { useApp } from '../lib/appContext';
@@ -44,6 +44,11 @@ export function TaskForm({
   else plannedDate = deadline ? defaultPlannedDate(deadline, today) : null;
 
   const deadlineProblem = deadline ? deadlineError(deadline, today, task?.deadline) : null;
+  // Only a planned date picked in this form is checked; an existing past one may stay.
+  const plannedProblem =
+    plannedOverride !== undefined
+      ? plannedDateError(plannedOverride, today, task ? task.plannedDate : undefined)
+      : null;
   const pending = create.isPending || update.isPending;
   const list = listId ? listsById.get(listId) : undefined;
 
@@ -52,6 +57,7 @@ export function TaskForm({
     if (!title.trim()) return setError('Add a title');
     if (!deadline) return setError('Choose a deadline');
     if (deadlineProblem) return setError(deadlineProblem);
+    if (plannedProblem) return setError(plannedProblem);
     setError(null);
     const planned = plannedOverride !== undefined ? { plannedDate: plannedOverride } : {};
     try {
@@ -123,6 +129,7 @@ export function TaskForm({
             value={plannedDate}
             onChange={setPlannedOverride}
             placeholder={deadline ? 'Not planned' : 'Set a deadline first'}
+            min={today}
             disabled={!canEdit || !deadline}
           />
           {plannedDate && isAuto && <span className="muted">auto</span>}
@@ -141,6 +148,7 @@ export function TaskForm({
               <TriangleAlert size={14} aria-hidden="true" /> Planned after deadline
             </span>
           )}
+          {plannedProblem && <span className="field-error">{plannedProblem}</span>}
         </div>
 
         <span className="field-grid__label">Priority</span>

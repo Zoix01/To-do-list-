@@ -10,6 +10,7 @@ import {
   groupCompleted,
   isPlannedAfterDeadline,
   newTaskPlanning,
+  plannedDateError,
   sortTasks,
   taskFlag,
   todaySections,
@@ -165,6 +166,28 @@ describe('deadlineError', () => {
   });
   it('rejects invalid dates', () => {
     expect(deadlineError('2026-13-01', TODAY)).toBe('Deadline must be a valid date');
+  });
+});
+
+describe('plannedDateError', () => {
+  it('accepts today, future dates and "unplanned"', () => {
+    expect(plannedDateError('2026-10-10', TODAY)).toBeNull();
+    expect(plannedDateError('2026-12-01', TODAY)).toBeNull();
+    expect(plannedDateError(null, TODAY)).toBeNull();
+    expect(plannedDateError(null, TODAY, '2026-10-01')).toBeNull();
+  });
+  it('rejects a past planned date on create and on change', () => {
+    expect(plannedDateError('2026-10-09', TODAY)).toBe('Planned date cannot be in the past');
+    expect(plannedDateError('2026-10-09', TODAY, '2026-10-15')).toBe(
+      'Planned date cannot be in the past',
+    );
+    expect(plannedDateError('2026-10-02', TODAY, null)).toBe('Planned date cannot be in the past');
+  });
+  it('allows keeping an existing past planned date unchanged', () => {
+    expect(plannedDateError('2026-10-05', TODAY, '2026-10-05')).toBeNull();
+  });
+  it('rejects invalid dates', () => {
+    expect(plannedDateError('2026-02-30', TODAY)).toBe('Planned date must be a valid date');
   });
 });
 
