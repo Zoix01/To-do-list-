@@ -1,0 +1,428 @@
+/* ---------------------------------------------------------------- Layout */
+
+.main__inner:has(.calendar) {
+  max-width: none;
+}
+
+.calendar--grid {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding-bottom: var(--space-4);
+}
+
+.app--phone .main__inner:has(.calendar) {
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--dock-space));
+}
+
+.calendar {
+  --dock-space: 44px;
+}
+
+.calendar:has(.tray--dock .tray__list) {
+  --dock-space: 128px;
+}
+
+.app--phone .calendar--grid {
+  height: calc(100dvh - var(--tabbar-height) - env(safe-area-inset-bottom) - var(--dock-space));
+  padding-bottom: var(--space-2);
+}
+
+.calendar__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.app--desktop .calendar__body {
+  grid-template-columns: 1fr 240px;
+  gap: var(--space-4);
+}
+
+.calendar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.grid-calendar {
+  min-height: 0;
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------- FullCalendar theme → Ember tokens */
+
+.grid-calendar {
+  --fc-classic-background: var(--bg);
+  --fc-classic-foreground: var(--text);
+  --fc-classic-faint: var(--surface);
+  --fc-classic-muted: var(--surface);
+  --fc-classic-strong: var(--surface-raised);
+  --fc-classic-faint-foreground: var(--text-muted);
+  --fc-classic-muted-foreground: var(--text-muted);
+  --fc-classic-border: var(--border);
+  --fc-classic-strong-border: var(--border);
+  --fc-classic-primary: var(--accent);
+  --fc-classic-primary-foreground: var(--on-accent);
+  --fc-classic-event: transparent;
+  --fc-classic-event-contrast: var(--text);
+  --fc-classic-today: color-mix(in srgb, var(--accent) 7%, transparent);
+  --fc-classic-highlight: color-mix(in srgb, var(--accent) 18%, transparent);
+  --fc-classic-now: var(--accent);
+  --fc-classic-button: var(--surface);
+  --fc-classic-button-border: var(--border);
+  --fc-classic-button-strong: var(--surface-raised);
+  --fc-classic-button-strong-border: var(--border);
+  --fc-classic-button-outline: var(--accent);
+  --fc-classic-button-foreground: var(--text);
+  --fc-classic-background-event: var(--accent);
+  --fc-classic-background-event-opacity: 15%;
+  --fc-classic-background-event-foreground-opacity: 50%;
+  --fc-classic-small-dot-width: 8px;
+  --fc-classic-large-dot-width: 10px;
+  font-size: var(--text-meta);
+}
+
+.grid-calendar .cal-day.is-past {
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+}
+
+/* We draw the chip ourselves; the FullCalendar event box stays invisible. */
+.grid-calendar .cal-event {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* ---------------------------------------------------------------- Chips */
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 1.5px solid var(--chip-color);
+  border-radius: var(--radius);
+  font-size: var(--text-meta);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chip--filled {
+  background: var(--chip-color);
+  color: var(--bg);
+}
+
+.chip--outline {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.chip--outline .chip__flag {
+  color: var(--chip-color);
+}
+
+.chip__flag {
+  flex-shrink: 0;
+}
+
+.chip__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip--high .chip__title {
+  font-weight: var(--weight-medium);
+}
+
+/* Flags: a red / orange edge, separated from the chip color by a dark line. */
+.chip--overdue {
+  box-shadow:
+    inset 3px 0 0 var(--danger),
+    inset 5px 0 0 var(--bg);
+  padding-left: 9px;
+}
+
+.chip--missed {
+  box-shadow:
+    inset 3px 0 0 var(--warning),
+    inset 5px 0 0 var(--bg);
+  padding-left: 9px;
+}
+
+/* ---------------------------------------------------------------- Phone week list */
+
+.week-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.week-day {
+  min-height: 56px;
+  padding: var(--space-2) 0 var(--space-3);
+  border-bottom: var(--hairline);
+  cursor: pointer;
+  transition: background-color var(--duration) var(--ease-out);
+}
+
+.week-day.is-over {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.week-day__date {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  font-weight: var(--weight-medium);
+}
+
+.week-day.is-today .week-day__date {
+  color: var(--accent);
+}
+
+.week-day__today {
+  font-weight: var(--weight-regular);
+}
+
+.week-day__chips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.week-chip {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  /* Long-press drags the chip; don't open the browser's text/context menu. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+.week-chip .chip {
+  height: 36px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-body);
+}
+
+.week-chip .chip--overdue,
+.week-chip .chip--missed {
+  padding-left: 15px;
+}
+
+.week-chip.is-dragging {
+  opacity: 0.35;
+}
+
+.week-chip--overlay .chip {
+  box-shadow: var(--shadow-popover);
+}
+
+/* ---------------------------------------------------------------- Unplanned tray */
+
+.tray {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tray--side {
+  border-left: var(--hairline);
+  padding-left: var(--space-4);
+}
+
+.tray--dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  z-index: 9;
+  background: var(--surface);
+  border-top: var(--hairline);
+}
+
+.tray__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  font-weight: var(--weight-medium);
+  text-align: left;
+}
+
+.tray--side .tray__header {
+  cursor: default;
+}
+
+.tray--dock .tray__header {
+  width: 100%;
+  padding: 0 var(--space-4);
+}
+
+.tray--dock .tray__header svg {
+  margin-left: auto;
+}
+
+.tray__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+}
+
+.tray--dock .tray__list {
+  flex-direction: row;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.tray__empty {
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  padding: var(--space-1) 0;
+}
+
+.tray__hint {
+  padding: var(--space-2) 0;
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.tray--dock .tray__hint {
+  padding: var(--space-1) var(--space-4) var(--space-2);
+}
+
+.tray-item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  padding: 6px var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+.tray-item:hover {
+  background: var(--surface);
+}
+
+.tray--dock .tray-item {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 220px;
+  border: var(--hairline);
+  background: var(--bg);
+}
+
+.tray-item.is-dragging {
+  opacity: 0.35;
+}
+
+.tray-item__ring {
+  grid-row: 1;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--check-color);
+  border-radius: 50%;
+}
+
+.tray-item__title {
+  grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tray-item__meta {
+  grid-column: 2;
+  grid-row: 2;
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+/* ---------------------------------------------------------------- Task peek */
+
+.peek {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.peek__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.peek__title {
+  font-size: var(--text-title);
+}
+
+.peek__title:not(.task-row__title--high) {
+  font-weight: var(--weight-regular);
+}
+
+.peek__facts {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.peek__facts dt {
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  padding-top: 1px;
+}
+
+.peek__facts dd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.peek__notes {
+  max-height: 120px;
+  overflow-y: auto;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.is-overdue {
+  color: var(--danger);
+}

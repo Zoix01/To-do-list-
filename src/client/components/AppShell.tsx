@@ -1,5 +1,5 @@
 import {
-  CalendarCheck,
+  CalendarDays,
   CircleCheck,
   ListTodo,
   Menu as MenuIcon,
@@ -7,6 +7,7 @@ import {
   Settings,
   WifiOff,
   X,
+  Sun,
 } from 'lucide-react';
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../lib/appContext';
@@ -26,9 +27,14 @@ const ShellContext = createContext<{ isDesktop: boolean; openDrawer: () => void 
 });
 
 const MAIN_NAV = [
-  { to: '/', label: 'Today', icon: CalendarCheck },
+  { to: '/', label: 'Today', icon: Sun },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/tasks', label: 'All tasks', icon: ListTodo },
 ];
+
+export function useIsDesktop(): boolean {
+  return useContext(ShellContext).isDesktop;
+}
 
 function NavLink({
   to,
@@ -37,7 +43,7 @@ function NavLink({
   onNavigate,
 }: {
   to: string;
-  icon?: typeof CalendarCheck;
+  icon?: typeof CalendarDays;
   children: ReactNode;
   onNavigate?: () => void;
 }) {

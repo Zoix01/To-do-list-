@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ComponentType } from 'react';
 import { AppShell } from './components/AppShell';
 import { TaskFormProvider } from './components/TaskFormProvider';
 import { ApiError } from './lib/api';
@@ -12,8 +12,16 @@ import { LoginScreen } from './screens/LoginScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { TodayScreen } from './screens/TodayScreen';
 
-const SCREENS: Record<string, () => ReactNode> = {
+// FullCalendar is large; load it only when the calendar is opened (still cached for offline).
+const CalendarScreen = lazy(() =>
+  import('./screens/calendar/CalendarScreen').then((module) => ({
+    default: module.CalendarScreen,
+  })),
+);
+
+const SCREENS: Record<string, ComponentType> = {
   '/': TodayScreen,
+  '/calendar': CalendarScreen,
   '/tasks': AllTasksScreen,
   '/completed': CompletedScreen,
   '/lists': ListsScreen,
@@ -23,7 +31,11 @@ const SCREENS: Record<string, () => ReactNode> = {
 function Screen() {
   const { location } = useRouter();
   const Component = SCREENS[location.pathname] ?? TodayScreen;
-  return <Component />;
+  return (
+    <Suspense fallback={null}>
+      <Component />
+    </Suspense>
+  );
 }
 
 export function App() {

@@ -14,7 +14,7 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   high: 'High',
 };
 
-function PriorityTag({ priority }: { priority: Priority }) {
+export function PriorityTag({ priority }: { priority: Priority }) {
   const label = `${PRIORITY_LABELS[priority]} priority`;
   return (
     <span className={`priority priority--${priority}`} title={label}>
@@ -83,7 +83,8 @@ export function CompletedRow({
 }: {
   task: Task;
   onRestore: () => void;
-  onDelete: () => void;
+  /** Omit to hide the delete button. */
+  onDelete?: () => void;
 }) {
   const { listsById, canEdit } = useApp();
   const list = task.listId ? listsById.get(task.listId) : undefined;
@@ -100,16 +101,18 @@ export function CompletedRow({
         <span className="task-row__title">{task.title}</span>
         {list && <span className="task-row__meta">{list.name}</span>}
       </span>
-      <button
-        type="button"
-        className="icon-button"
-        aria-label={`Delete “${task.title}” permanently`}
-        title="Delete permanently"
-        onClick={onDelete}
-        disabled={!canEdit}
-      >
-        <Trash2 size={16} aria-hidden="true" />
-      </button>
+      {onDelete && (
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={`Delete “${task.title}” permanently`}
+          title="Delete permanently"
+          onClick={onDelete}
+          disabled={!canEdit}
+        >
+          <Trash2 size={16} aria-hidden="true" />
+        </button>
+      )}
     </li>
   );
 }
