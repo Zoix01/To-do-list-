@@ -138,6 +138,8 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
 ### 5.3 Completing
 - One tick completes the task. It disappears from every view, including both of its calendar entries (planned and deadline).
 - Completed tasks go to the **Completed** archive, grouped by completion date (the date in the configured time zone, not UTC), newest first. From there I can **undo** (restore it with its original dates) or delete it permanently (with confirmation).
+- The Completed archive has the same **list filter** as All tasks (one or more lists, including "No list"), remembered separately on each device. Each completed row shows its list name.
+- A **"Delete all"** button (labelled "Delete shown" while a filter is active) permanently deletes exactly the completed tasks currently shown, after a confirmation that states how many.
 - Deleting an uncompleted task asks for confirmation.
 
 ### 5.4 Lists
@@ -195,7 +197,13 @@ In this order:
 
 Sections 5 and 6 are added in Phase 3; Phase 1 builds sections 1–4.
 
-Each task row shows: checkbox, title, list color dot, priority marker, deadline label, flag if any. Tapping a row opens the edit form. A "+" button adds a task.
+Each task row (on every screen) shows, in this order on one line:
+- **checkbox** — a circle whose ring is drawn in the task's **list color** (neutral gray for no list); this replaces a separate list color dot;
+- **title** — high-priority titles use medium weight (500);
+- **priority number** in a small outlined tag: `0` low, `1` medium, `2` high (the form's priority buttons show the same numbers: "0 Low · 1 Medium · 2 High");
+- **deadline label**, then the **flag** if any, then the planned-after-deadline warning icon if any.
+
+The metadata follows the title directly (not right-aligned), so everything is readable in one glance; on phones it wraps to a second line under the title. Tapping a row opens the edit form. A "+" button adds a task.
 
 **Deadline label** (used everywhere a task row shows its deadline):
 - deadline today → "due today"
@@ -351,7 +359,7 @@ Text on `--accent` fills uses `--bg` color. Check every text/background pair pas
 
 **List colors** (fixed palette of 12, in this order in the color picker):
 `#D9675A` `#E8925A` `#D9B25A` `#A8B55E` `#7FA36B` `#5FA39A` `#6A9FB5` `#7B8FC9` `#9A82C2` `#B87AA6` `#C98A8A` `#A08C76`
-Loose tasks (no list) use `--text-muted` gray.
+Loose tasks (no list) use `--text-muted` gray. On task rows, the list color is carried by the checkbox ring (§8.1).
 
 ### Typography
 - **Geist** (self-hosted or Google Fonts) including the **latin-ext** subset so Czech characters render in Geist, not a fallback font. Verify with: "Příliš žluťoučký kůň úpěl ďábelské ódy".
