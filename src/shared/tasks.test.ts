@@ -140,6 +140,9 @@ describe('applyPlanningChange', () => {
     const drifted = { ...auto, plannedDate: '2026-10-05' };
     expect(applyPlanningChange(drifted, { deadline: '2026-10-15' }, TODAY)).toEqual(drifted);
   });
+  it('returns only the planning fields, even when given a whole task', () => {
+    expect(applyPlanningChange(task({ title: 'x', ...manual }), {}, TODAY)).toEqual(manual);
+  });
 });
 
 describe('deadlineError', () => {
@@ -151,12 +154,8 @@ describe('deadlineError', () => {
     expect(deadlineError('2026-10-09', TODAY)).toBe('Deadline cannot be in the past');
   });
   it('rejects changing a deadline to a past date', () => {
-    expect(deadlineError('2026-10-09', TODAY, '2026-10-20')).toBe(
-      'Deadline cannot be in the past',
-    );
-    expect(deadlineError('2026-10-01', TODAY, '2026-10-05')).toBe(
-      'Deadline cannot be in the past',
-    );
+    expect(deadlineError('2026-10-09', TODAY, '2026-10-20')).toBe('Deadline cannot be in the past');
+    expect(deadlineError('2026-10-01', TODAY, '2026-10-05')).toBe('Deadline cannot be in the past');
   });
   it('allows keeping an existing past deadline unchanged', () => {
     expect(deadlineError('2026-10-05', TODAY, '2026-10-05')).toBeNull();
@@ -181,9 +180,7 @@ describe('taskFlag', () => {
     );
   });
   it('is none when deadline is today and plan is today', () => {
-    expect(taskFlag(task({ deadline: '2026-10-10', plannedDate: '2026-10-10' }), TODAY)).toBe(
-      null,
-    );
+    expect(taskFlag(task({ deadline: '2026-10-10', plannedDate: '2026-10-10' }), TODAY)).toBe(null);
   });
   it('is none for unplanned future tasks', () => {
     expect(taskFlag(task({ deadline: '2026-10-12', plannedDate: null }), TODAY)).toBe(null);
@@ -346,10 +343,7 @@ describe('todaySections', () => {
     expect(titles(sections.overdue)).toEqual(['overdue planned today']);
     expect(titles(sections.missedPlan)).toEqual(['missed due today']);
     expect(titles(sections.today)).toEqual(['planned & due today', 'planned today']);
-    expect(titles(sections.dueToday)).toEqual([
-      'due today, planned later',
-      'due today, unplanned',
-    ]);
+    expect(titles(sections.dueToday)).toEqual(['due today, planned later', 'due today, unplanned']);
   });
 });
 

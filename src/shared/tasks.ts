@@ -46,7 +46,7 @@ export function applyPlanningChange(
   if (deadline !== current.deadline && !current.plannedManual) {
     return { deadline, plannedDate: defaultPlannedDate(deadline, today), plannedManual: false };
   }
-  return { ...current, deadline };
+  return { deadline, plannedDate: current.plannedDate, plannedManual: current.plannedManual };
 }
 
 /**
