@@ -1,4 +1,4 @@
-import { dateInZone, daysBetween, formatShortDate, isISODate } from './dates';
+import { dateInZone, daysBetween, formatShortDate, isISODate, mondayOf } from './dates';
 import type { ISODate, List, Priority, Task, TaskFlag } from './types';
 
 // ---------------------------------------------------------------------------
@@ -217,14 +217,23 @@ export interface TodaySections<T> {
   missedPlan: T[];
   today: T[];
   dueToday: T[];
+  /** Weekly instances of the current week that aren't planned on a day yet. */
+  thisWeek: T[];
 }
 
 /** Each open task lands in the first section it matches. */
-export function todaySections<T extends SortFields>(
+export function todaySections<T extends SortFields & Pick<Task, 'recurringId' | 'weekStart'>>(
   tasks: readonly T[],
   today: ISODate,
 ): TodaySections<T> {
-  const sections: TodaySections<T> = { overdue: [], missedPlan: [], today: [], dueToday: [] };
+  const sections: TodaySections<T> = {
+    overdue: [],
+    missedPlan: [],
+    today: [],
+    dueToday: [],
+    thisWeek: [],
+  };
+  const currentWeek = mondayOf(today);
   for (const task of tasks) {
     if (task.completedAt !== null) continue;
     const flag = taskFlag(task, today);
@@ -232,6 +241,13 @@ export function todaySections<T extends SortFields>(
     else if (flag === 'missed_plan') sections.missedPlan.push(task);
     else if (task.plannedDate === today) sections.today.push(task);
     else if (task.deadline === today) sections.dueToday.push(task);
+    else if (
+      task.recurringId !== null &&
+      task.weekStart === currentWeek &&
+      task.plannedDate === null
+    ) {
+      sections.thisWeek.push(task);
+    }
   }
   for (const section of Object.values(sections) as T[][]) {
     section.sort((a, b) => compareByDeadline(a, b, today));

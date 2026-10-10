@@ -56,6 +56,53 @@ export interface Task {
 /** Red = deadline passed; orange = planned date passed. */
 export type TaskFlag = 'overdue' | 'missed_plan' | null;
 
+/** 1 = Monday … 7 = Sunday */
+export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export const RECURRING_MODES = ['fixed', 'flexible'] as const;
+export type RecurringMode = (typeof RECURRING_MODES)[number];
+
+/** Template that creates one task per week (SPEC §6). */
+export interface RecurringTask {
+  id: string;
+  listId: string | null;
+  title: string;
+  notes: string | null;
+  priority: Priority;
+  mode: RecurringMode;
+  /** Only for 'fixed'. */
+  weekday: Weekday | null;
+  active: boolean;
+  /** Date it was created or last resumed; fixed weekdays before it are skipped. */
+  activeFrom: ISODate;
+  /** Monday of the latest week already generated (each week is generated once). */
+  generatedThrough: ISODate | null;
+  createdAt: Timestamp;
+}
+
+export const HABIT_FREQUENCIES = ['daily', 'weekdays', 'per_week', 'per_month'] as const;
+export type HabitFrequency = (typeof HABIT_FREQUENCIES)[number];
+
+export interface Habit {
+  id: string;
+  name: string;
+  color: ListColor;
+  /** Empty until the Phase 5 icon picker. */
+  icon: string | null;
+  frequency: HabitFrequency;
+  /** Only for 'weekdays'. */
+  weekdays: Weekday[];
+  /** Only for 'per_week' (1–7) and 'per_month' (1–31). */
+  target: number | null;
+  archived: boolean;
+  createdAt: Timestamp;
+}
+
+/** A habit as sent by the API: with the dates it was ticked on. */
+export interface HabitWithChecks extends Habit {
+  checks: ISODate[];
+}
+
 export interface Me {
   timeZone: string;
 }

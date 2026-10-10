@@ -8,7 +8,7 @@ import {
   startOfMonth as startOfMonthDate,
   startOfWeek,
 } from 'date-fns';
-import type { ISODate } from './types';
+import type { ISODate, Weekday } from './types';
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -43,6 +43,21 @@ export function maxDate(a: ISODate, b: ISODate): ISODate {
 /** e.g. "Mon 12 Oct" */
 export function formatShortDate(date: ISODate): string {
   return format(toDate(date), 'EEE d MMM');
+}
+
+/** 1 = Monday … 7 = Sunday */
+export function isoWeekday(date: ISODate): Weekday {
+  return Number(format(toDate(date), 'i')) as Weekday;
+}
+
+/** Last day of the month containing `date`. */
+export function endOfMonth(date: ISODate): ISODate {
+  return addDays(addMonths(startOfMonth(date), 1), -1);
+}
+
+/** e.g. "Mon" */
+export function formatWeekdayShort(weekday: Weekday): string {
+  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][weekday - 1]!;
 }
 
 export function addMonths(date: ISODate, months: number): ISODate {

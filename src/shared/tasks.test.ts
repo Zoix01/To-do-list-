@@ -347,6 +347,32 @@ describe('todaySections', () => {
     expect(titles(sections.missedPlan)).toEqual(['missed due today']);
     expect(titles(sections.today)).toEqual(['planned & due today', 'planned today']);
     expect(titles(sections.dueToday)).toEqual(['due today, planned later', 'due today, unplanned']);
+    expect(sections.thisWeek).toEqual([]);
+  });
+
+  it('lists this week’s unplanned weekly instances in "This week, unplanned"', () => {
+    // TODAY is Saturday 10 Oct; its week started Monday 5 Oct.
+    const weekly = { recurringId: 'r1', weekStart: '2026-10-05' };
+    const tasks = [
+      task({ title: 'flexible, unplanned', ...weekly, deadline: '2026-10-11', plannedDate: null }),
+      task({
+        title: 'flexible, planned Sun',
+        ...weekly,
+        deadline: '2026-10-11',
+        plannedDate: '2026-10-11',
+      }),
+      task({
+        title: 'next week',
+        recurringId: 'r1',
+        weekStart: '2026-10-12',
+        deadline: '2026-10-18',
+      }),
+      task({ title: 'normal unplanned', deadline: '2026-10-11', plannedDate: null }),
+      task({ title: 'due today wins', ...weekly, deadline: TODAY, plannedDate: null }),
+    ];
+    const sections = todaySections(tasks, TODAY);
+    expect(titles(sections.thisWeek)).toEqual(['flexible, unplanned']);
+    expect(titles(sections.dueToday)).toEqual(['due today wins']);
   });
 });
 
