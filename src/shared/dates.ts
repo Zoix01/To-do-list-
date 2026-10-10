@@ -1,9 +1,12 @@
 import {
   addDays as addDaysToDate,
+  addMonths as addMonthsToDate,
   differenceInCalendarDays,
   format,
   isValid,
   parseISO,
+  startOfMonth as startOfMonthDate,
+  startOfWeek,
 } from 'date-fns';
 import type { ISODate } from './types';
 
@@ -40,6 +43,43 @@ export function maxDate(a: ISODate, b: ISODate): ISODate {
 /** e.g. "Mon 12 Oct" */
 export function formatShortDate(date: ISODate): string {
   return format(toDate(date), 'EEE d MMM');
+}
+
+export function addMonths(date: ISODate, months: number): ISODate {
+  return fromDate(addMonthsToDate(toDate(date), months));
+}
+
+export function startOfMonth(date: ISODate): ISODate {
+  return fromDate(startOfMonthDate(toDate(date)));
+}
+
+/** Monday of the week containing `date` (weeks run Monday–Sunday). */
+export function mondayOf(date: ISODate): ISODate {
+  return fromDate(startOfWeek(toDate(date), { weekStartsOn: 1 }));
+}
+
+/** The 7 dates Monday–Sunday of the week containing `date`. */
+export function weekDates(date: ISODate): ISODate[] {
+  const monday = mondayOf(date);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
+/** e.g. "October 2026" */
+export function formatMonthTitle(date: ISODate): string {
+  return format(toDate(date), 'MMMM yyyy');
+}
+
+/** e.g. "12–18 Oct 2026", "28 Sep – 4 Oct 2026", "28 Dec 2026 – 3 Jan 2027" */
+export function formatWeekTitle(date: ISODate): string {
+  const start = toDate(mondayOf(date));
+  const end = toDate(addDays(mondayOf(date), 6));
+  if (start.getFullYear() !== end.getFullYear()) {
+    return `${format(start, 'd MMM yyyy')} – ${format(end, 'd MMM yyyy')}`;
+  }
+  if (start.getMonth() !== end.getMonth()) {
+    return `${format(start, 'd MMM')} – ${format(end, 'd MMM yyyy')}`;
+  }
+  return `${format(start, 'd')}–${format(end, 'd MMM yyyy')}`;
 }
 
 const zoneFormatters = new Map<string, Intl.DateTimeFormat>();

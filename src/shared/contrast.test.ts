@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { LIST_COLORS } from './types';
 
 // Checks every text/background pair the UI uses against WCAG AA (4.5:1).
 const css = readFileSync(new URL('../client/styles/tokens.css', import.meta.url), 'utf8');
@@ -43,5 +44,10 @@ const PAIRS: [text: string, background: string][] = [
 describe('design token contrast (WCAG AA)', () => {
   it.each(PAIRS)('%s on %s ≥ 4.5', (text, background) => {
     expect(contrast(token(text), token(background))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // Filled calendar chips use --bg text on the list color (and on --no-list gray).
+  it.each([...LIST_COLORS, token('text-muted')])('--bg text on %s ≥ 4.5', (color) => {
+    expect(contrast(token('bg'), color)).toBeGreaterThanOrEqual(4.5);
   });
 });
