@@ -4,12 +4,26 @@ A personal task planner for one person. Tasks have a required **deadline** and a
 
 Each deployment is single-user: you deploy your own copy and protect it with your own password.
 
-> Status: Phases 1–2 are done (tasks, lists, Today, All tasks, Completed, offline read-only, and a calendar with drag-to-plan). Weekly tasks, habits and the Claude connector are planned. See [SPEC.md](SPEC.md).
+> Status: Phases 1–3 are done: tasks and lists, Today, All tasks, Completed, a calendar with drag-to-plan, weekly tasks, habits with streaks, and read-only offline use. The Claude connector is next. See [SPEC.md](SPEC.md).
+
+| Today | Calendar |
+|---|---|
+| ![Today screen](docs/screenshots/today.png) | ![Calendar, month view](docs/screenshots/calendar.png) |
+| **All tasks, sorted by priority** | **Habit detail** |
+| ![All tasks sorted by priority](docs/screenshots/all-tasks.png) | ![Habit detail with streaks and month calendar](docs/screenshots/habit.png) |
+
+<p>
+  <img src="docs/screenshots/phone-today.png" alt="Today on a phone" width="260">
+  <img src="docs/screenshots/phone-week.png" alt="Calendar week on a phone" width="260">
+</p>
+
+_Screenshots use made-up sample data. A new installation starts empty._
 
 ## How it works
 
 - **One Cloudflare Worker** serves the React app as static files and runs the API under `/api`, so everything is on one origin.
-- **Cloudflare D1** (SQLite) stores lists, tasks and sessions. Migrations live in `migrations/`.
+- **Cloudflare D1** (SQLite) stores lists, tasks, weekly templates, habits and sessions. Migrations live in `migrations/`.
+- **Weekly tasks** are created lazily when the app loads, one per template per week, so no scheduled job is needed.
 - **Login** uses one password. Its PBKDF2 hash is stored as a Worker secret, never in the database or in this repo. After logging in, a device stays logged in for a year, and the session renews itself whenever you use it.
 - **Offline** the app shows your last loaded data read-only. Changes need a connection.
 
