@@ -4,7 +4,7 @@ A personal task planner for one person. Tasks have a required **deadline** and a
 
 Each deployment is single-user: you deploy your own copy and protect it with your own password.
 
-> Status: Phase 1 is done (tasks, lists, Today, All tasks, Completed, offline read-only). The calendar, weekly tasks, habits and the Claude connector are planned. See [SPEC.md](SPEC.md).
+> Status: Phases 1–2 are done (tasks, lists, Today, All tasks, Completed, offline read-only, and a calendar with drag-to-plan). Weekly tasks, habits and the Claude connector are planned. See [SPEC.md](SPEC.md).
 
 ## How it works
 
