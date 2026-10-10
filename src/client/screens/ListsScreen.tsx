@@ -25,15 +25,15 @@ import { useApp } from '../lib/appContext';
 import { useCompletedTasks, useListMutations, useOpenTasks } from '../lib/queries';
 
 const COLOR_NAMES: Record<ListColor, string> = {
-  '#D9675A': 'Red',
   '#E8925A': 'Orange',
-  '#D9B25A': 'Yellow',
   '#A8B55E': 'Olive',
   '#7FA36B': 'Green',
+  '#4FB077': 'Emerald',
   '#5FA39A': 'Teal',
   '#6A9FB5': 'Blue',
   '#7B8FC9': 'Indigo',
   '#9A82C2': 'Purple',
+  '#B77CD0': 'Orchid',
   '#B87AA6': 'Plum',
   '#C98A8A': 'Rose',
   '#A08C76': 'Brown',

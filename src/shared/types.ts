@@ -7,17 +7,20 @@ export type Timestamp = string;
 export const PRIORITIES = ['low', 'medium', 'high'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
-/** Fixed list palette, in color-picker order (SPEC §14). */
+/**
+ * Fixed list palette, in color-picker order (SPEC §14). Red and amber are left out
+ * on purpose: they mean overdue / missed plan and high / medium priority.
+ */
 export const LIST_COLORS = [
-  '#D9675A',
   '#E8925A',
-  '#D9B25A',
   '#A8B55E',
   '#7FA36B',
+  '#4FB077',
   '#5FA39A',
   '#6A9FB5',
   '#7B8FC9',
   '#9A82C2',
+  '#B77CD0',
   '#B87AA6',
   '#C98A8A',
   '#A08C76',
