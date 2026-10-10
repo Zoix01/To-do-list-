@@ -166,7 +166,25 @@ export function compareByUrgency(a: SortFields, b: SortFields, today: ISODate): 
   );
 }
 
-export type SortMode = 'deadline' | 'urgency' | 'list';
+export type SortMode = 'deadline' | 'urgency' | 'list' | 'priority';
+
+export interface PriorityGroup<T> {
+  priority: Priority;
+  tasks: T[];
+}
+
+/** High → medium → low; all three groups always present (drop targets); each by deadline. */
+export function groupByPriority<T extends SortFields>(
+  tasks: readonly T[],
+  today: ISODate,
+): PriorityGroup<T>[] {
+  return (['high', 'medium', 'low'] as const).map((priority) => ({
+    priority,
+    tasks: tasks
+      .filter((task) => task.priority === priority)
+      .sort((a, b) => compareByDeadline(a, b, today)),
+  }));
+}
 
 export function sortTasks<T extends SortFields>(
   tasks: readonly T[],

@@ -4,6 +4,7 @@ import { groupByList, sortTasks, type SortMode } from '../../shared/tasks';
 import { AddTaskButton, ScreenHeader } from '../components/AppShell';
 import { ColorDot, Menu, MenuItem } from '../components/controls';
 import { ListFilterMenu, NO_LIST, useListFilter } from '../components/ListFilter';
+import { PriorityGroups } from '../components/PriorityGroups';
 import { TaskList } from '../components/TaskRow';
 import { useApp } from '../lib/appContext';
 import { useStoredState } from '../lib/hooks';
@@ -14,6 +15,7 @@ const SORT_LABELS: Record<SortMode, string> = {
   deadline: 'Deadline',
   urgency: 'Urgency',
   list: 'List',
+  priority: 'Priority',
 };
 
 export function AllTasksScreen() {
@@ -71,11 +73,13 @@ export function AllTasksScreen() {
         }
       />
 
-      {tasks && filtered.length === 0 && (
+      {tasks && filtered.length === 0 && sort !== 'priority' && (
         <p className="empty">{filter.length === 0 ? 'No tasks' : 'No tasks in this filter'}</p>
       )}
 
-      {sort === 'list' ? (
+      {sort === 'priority' ? (
+        <PriorityGroups tasks={filtered} />
+      ) : sort === 'list' ? (
         groupByList(filtered, lists, today).map((group) => (
           <section key={group.list?.id ?? NO_LIST} className="section">
             <h2 className="section__title">

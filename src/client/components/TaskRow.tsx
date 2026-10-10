@@ -1,4 +1,5 @@
 import { Trash2, TriangleAlert } from 'lucide-react';
+import type { DOMAttributes, HTMLAttributes } from 'react';
 import { deadlineLabel, isPlannedAfterDeadline, taskFlag } from '../../shared/tasks';
 import type { Priority, Task } from '../../shared/types';
 import { useApp } from '../lib/appContext';
@@ -38,21 +39,34 @@ const PRIORITY_COLOR: Record<Priority, string> = {
 /** What the checkbox ring color means: the task's list, or its priority. */
 export type RingColor = 'list' | 'priority';
 
-function TaskRow({
+/** Drag wiring from dnd-kit's useDraggable, for views that let rows be dragged. */
+export interface RowDrag {
+  setNodeRef: (element: HTMLElement | null) => void;
+  attributes: HTMLAttributes<HTMLElement>;
+  listeners: DOMAttributes<HTMLElement> | undefined;
+  isDragging: boolean;
+}
+
+export function TaskRow({
   task,
   onComplete,
   ringColor,
+  drag,
 }: {
   task: Task;
   onComplete: (task: Task) => void;
   ringColor: RingColor;
+  drag?: RowDrag;
 }) {
   const { today, listsById, canEdit } = useApp();
   const { openEdit } = useTaskForm();
   const flag = taskFlag(task, today);
   const list = task.listId ? listsById.get(task.listId) : undefined;
+  const classes = ['task-row', drag && 'task-row--draggable', drag?.isDragging && 'is-dragging']
+    .filter(Boolean)
+    .join(' ');
   return (
-    <li className="task-row">
+    <li className={classes} ref={drag?.setNodeRef}>
       <Checkbox
         checked={false}
         color={ringColor === 'priority' ? PRIORITY_COLOR[task.priority] : (list?.color ?? null)}
@@ -60,7 +74,13 @@ function TaskRow({
         onChange={() => onComplete(task)}
         disabled={!canEdit}
       />
-      <button type="button" className="task-row__main" onClick={() => openEdit(task)}>
+      <button
+        type="button"
+        className="task-row__main"
+        onClick={() => openEdit(task)}
+        {...drag?.attributes}
+        {...drag?.listeners}
+      >
         <span className={titleClass(task.priority)}>{task.title}</span>
         <span className="task-row__meta">
           <PriorityTag priority={task.priority} />

@@ -21,7 +21,7 @@ I have a JavaScript background but **no experience with Cloudflare**. Walk me th
 - Import/export
 - Google Calendar or any other external calendar integration
 - Daily workload/capacity view
-- Pomodoro, time tracking, Kanban
+- Pomodoro, time tracking, Kanban (status columns like To do / Doing / Done). The only drag-between-groups view is the **Priority** sort in All tasks (§8.3).
 
 ---
 
@@ -233,6 +233,7 @@ The metadata follows the title directly (not right-aligned), so everything is re
   - **Deadline** — earliest first
   - **Urgency** — see formula below
   - **List** — grouped by list (in list order), within each group sorted by deadline; loose tasks as a "No list" group at the end
+  - **Priority** — three sections, `2 · High`, `1 · Medium`, `0 · Low` (always shown, even when empty), each sorted by deadline (overdue first). **Dragging a task into another section changes its priority** (long-press on touch, like the calendar). Order within a section is automatic; there is no manual ordering. The list filter still applies.
 - Filter by one or more lists; **"No list"** is one of the filter options.
 - **Color by priority:** in All tasks the checkbox ring shows the task's priority, not its list (the list is available through the filter and the List sort): `2` high = red (`--danger`), `1` medium = amber (`--warning`), `0` low = neutral gray. Today, Completed and the calendar keep list colors.
 - Overdue tasks are always shown first within any sort, red before orange:

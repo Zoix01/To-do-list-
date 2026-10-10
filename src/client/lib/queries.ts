@@ -5,7 +5,7 @@ import type {
   TaskCreateInput,
   TaskUpdateInput,
 } from '../../shared/schemas';
-import type { List, Me, Task } from '../../shared/types';
+import type { List, Me, Priority, Task } from '../../shared/types';
 import { api, errorMessage } from './api';
 import { useFeedback } from './feedback';
 
@@ -123,6 +123,25 @@ export function useTaskMutations() {
     onSettled: invalidate,
   });
 
+  /** Changes the priority; shown right away, e.g. after a drop in the Priority view. */
+  const reprioritize = useMutation({
+    mutationFn: ({ id, priority }: { id: string; priority: Priority }) =>
+      api<Task>(`/tasks/${id}`, { method: 'PATCH', body: { priority } }),
+    onMutate: async ({ id, priority }) => {
+      await queryClient.cancelQueries({ queryKey: keys.openTasks });
+      const previous = queryClient.getQueryData<Task[]>(keys.openTasks);
+      queryClient.setQueryData<Task[]>(keys.openTasks, (tasks) =>
+        tasks?.map((task) => (task.id === id ? { ...task, priority } : task)),
+      );
+      return () => queryClient.setQueryData(keys.openTasks, previous);
+    },
+    onError: (error, _vars, restore) => {
+      restore?.();
+      onError(error);
+    },
+    onSettled: invalidate,
+  });
+
   const removeCompleted = useMutation({
     mutationFn: (ids: string[]) =>
       api('/tasks/delete-completed', { method: 'POST', body: { ids } }),
@@ -142,7 +161,7 @@ export function useTaskMutations() {
     onSettled: invalidate,
   });
 
-  return { create, update, complete, uncomplete, remove, removeCompleted, plan };
+  return { create, update, complete, uncomplete, remove, removeCompleted, plan, reprioritize };
 }
 
 export function useListMutations() {

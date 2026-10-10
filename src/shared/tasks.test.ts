@@ -7,6 +7,7 @@ import {
   deadlineLabel,
   defaultPlannedDate,
   groupByList,
+  groupByPriority,
   groupCompleted,
   isPlannedAfterDeadline,
   newTaskPlanning,
@@ -330,6 +331,22 @@ describe('sorting', () => {
   it('list sort leaves out empty groups', () => {
     const groups = groupByList([task({ listId: 'home' })], [list('home', 1), list('x', 2)], TODAY);
     expect(groups.map((g) => g.list?.id)).toEqual(['home']);
+  });
+});
+
+describe('groupByPriority', () => {
+  it('returns high, medium, low groups, each by deadline with overdue first', () => {
+    const tasks = [
+      task({ title: 'low', priority: 'low', deadline: '2026-10-12' }),
+      task({ title: 'high later', priority: 'high', deadline: '2026-10-20' }),
+      task({ title: 'high red', priority: 'high', deadline: '2026-10-05' }),
+      task({ title: 'high sooner', priority: 'high', deadline: '2026-10-11' }),
+    ];
+    const groups = groupByPriority(tasks, TODAY);
+    expect(groups.map((g) => g.priority)).toEqual(['high', 'medium', 'low']);
+    expect(titles(groups[0]!.tasks)).toEqual(['high red', 'high sooner', 'high later']);
+    expect(groups[1]!.tasks).toEqual([]);
+    expect(titles(groups[2]!.tasks)).toEqual(['low']);
   });
 });
 
