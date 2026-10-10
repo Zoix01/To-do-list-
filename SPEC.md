@@ -145,7 +145,7 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
 ### 5.4 Lists
 - Create, rename, recolor, reorder lists. Reordering is by **drag** (touch-friendly, `@dnd-kit`).
 - Every task and calendar entry is shown in its list's color. Loose tasks use neutral gray.
-- Deleting a list asks: "Move its tasks to No list" or "Delete its tasks too". "Delete its tasks too" deletes **all** of its tasks, including completed ones in the archive. (What happens to the list's weekly templates is decided in Phase 3.)
+- Deleting a list asks: "Move its tasks to No list" or "Delete its tasks too". "Delete its tasks too" deletes **all** of its tasks, including completed ones in the archive, **and the list's weekly templates** (§6). "Move its tasks to No list" also moves the list's weekly templates to No list.
 
 ---
 
@@ -214,6 +214,8 @@ The metadata follows the title directly (not right-aligned), so everything is re
 
 ### 8.2 Calendar
 - **Month** and **Week** views, toggle at the top. On phone it opens on Week, on desktop on Month.
+- **Week on phones** is a **vertical day list**: 7 stacked rows (Monday at the top), each showing that day's chips at full width so titles stay readable. Chips are dragged between rows with a long-press. Desktop Week (and Month everywhere) uses the normal FullCalendar day grid.
+- **Past days don't accept drops** (planned entries or tray items): you can only plan for today or later.
 - Each uncompleted task can appear twice:
   - **Planned entry** — filled chip in the list color, draggable to any day (sets `plannedDate`, `plannedManual = true`).
   - **Deadline entry** — outlined chip with a flag icon, same color, **not** draggable.
