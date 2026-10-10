@@ -1,4 +1,4 @@
-import { Trash2, TriangleAlert } from 'lucide-react';
+import { Repeat, Trash2, TriangleAlert } from 'lucide-react';
 import type { DOMAttributes, HTMLAttributes } from 'react';
 import { deadlineLabel, isPlannedAfterDeadline, taskFlag } from '../../shared/tasks';
 import type { List, Priority, Task } from '../../shared/types';
@@ -25,7 +25,17 @@ export function PriorityTag({ priority }: { priority: Priority }) {
   );
 }
 
-function titleClass(priority: Priority): string {
+/** Small repeat icon on tasks created by a weekly template (SPEC §6). */
+export function WeeklyMark() {
+  return (
+    <span className="weekly-mark" title="Weekly task">
+      <Repeat size={13} aria-hidden="true" />
+      <span className="visually-hidden">Weekly task</span>
+    </span>
+  );
+}
+
+export function titleClass(priority: Priority): string {
   return priority === 'high' ? 'task-row__title task-row__title--high' : 'task-row__title';
 }
 
@@ -101,6 +111,7 @@ export function TaskRow({
       >
         <span className={titleClass(task.priority)}>{task.title}</span>
         <span className="task-row__meta">
+          {task.recurringId && <WeeklyMark />}
           <PriorityTag priority={task.priority} />
           <span
             className={flag === 'overdue' ? 'task-row__deadline is-overdue' : 'task-row__deadline'}

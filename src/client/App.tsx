@@ -7,6 +7,9 @@ import { useMe } from './lib/queries';
 import { useRouter } from './lib/router';
 import { AllTasksScreen } from './screens/AllTasksScreen';
 import { CompletedScreen } from './screens/CompletedScreen';
+import { HabitDetailScreen } from './screens/habits/HabitDetailScreen';
+import { HabitsScreen } from './screens/habits/HabitsScreen';
+import { WeeklyScreen } from './screens/weekly/WeeklyScreen';
 import { ListsScreen } from './screens/ListsScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -26,10 +29,14 @@ const SCREENS: Record<string, ComponentType> = {
   '/completed': CompletedScreen,
   '/lists': ListsScreen,
   '/settings': SettingsScreen,
+  '/habits': HabitsScreen,
+  '/weekly': WeeklyScreen,
 };
 
 function Screen() {
   const { location } = useRouter();
+  const habitId = location.pathname.match(/^\/habits\/([^/]+)$/)?.[1];
+  if (habitId) return <HabitDetailScreen id={decodeURIComponent(habitId)} />;
   const Component = SCREENS[location.pathname] ?? TodayScreen;
   return (
     <Suspense fallback={null}>

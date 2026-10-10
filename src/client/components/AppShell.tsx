@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   CalendarDays,
   CircleCheck,
   ListTodo,
@@ -8,6 +9,8 @@ import {
   WifiOff,
   X,
   Sun,
+  Sprout,
+  Repeat,
 } from 'lucide-react';
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../lib/appContext';
@@ -30,6 +33,8 @@ const MAIN_NAV = [
   { to: '/', label: 'Today', icon: Sun },
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/tasks', label: 'All tasks', icon: ListTodo },
+  { to: '/habits', label: 'Habits', icon: Sprout },
+  { to: '/weekly', label: 'Weekly', icon: Repeat },
 ];
 
 export function useIsDesktop(): boolean {
@@ -48,7 +53,10 @@ function NavLink({
   onNavigate?: () => void;
 }) {
   const { location } = useRouter();
-  const active = location.pathname === to && !location.search.has('list');
+  // A habit's detail page (/habits/…) keeps "Habits" highlighted.
+  const active =
+    (location.pathname === to || (to !== '/' && location.pathname.startsWith(`${to}/`))) &&
+    !location.search.has('list');
   return (
     <Link
       to={to}
@@ -132,7 +140,11 @@ function TabBar() {
           key={to}
           to={to}
           className="tabbar__item"
-          aria-current={location.pathname === to ? 'page' : undefined}
+          aria-current={
+            location.pathname === to || (to !== '/' && location.pathname.startsWith(`${to}/`))
+              ? 'page'
+              : undefined
+          }
         >
           <Icon size={18} aria-hidden="true" />
           <span>{label}</span>
@@ -170,19 +182,33 @@ export function ScreenHeader({
   title,
   subtitle,
   actions,
+  back,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  /** Shows a back arrow to this path (and replaces the menu button on phones). */
+  back?: string;
 }) {
   const { isDesktop, openDrawer } = useContext(ShellContext);
   return (
     <>
       <header className="screen-header">
-        {!isDesktop && (
-          <button type="button" className="icon-button" aria-label="Open menu" onClick={openDrawer}>
-            <MenuIcon size={18} aria-hidden="true" />
-          </button>
+        {back ? (
+          <Link to={back} className="icon-button" aria-label="Back">
+            <ArrowLeft size={18} aria-hidden="true" />
+          </Link>
+        ) : (
+          !isDesktop && (
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Open menu"
+              onClick={openDrawer}
+            >
+              <MenuIcon size={18} aria-hidden="true" />
+            </button>
+          )
         )}
         <h1 className="screen-header__title">{title}</h1>
         {subtitle && <span className="screen-header__subtitle">{subtitle}</span>}
@@ -194,22 +220,27 @@ export function ScreenHeader({
 }
 
 /** "Add task": a header button on desktop, a floating button on phones. */
-export function AddTaskButton({ listId }: { listId?: string | null }) {
+/** Primary "add" action: a header button on desktop, a floating button on phones. */
+export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   const { isDesktop } = useContext(ShellContext);
   const { canEdit } = useApp();
-  const { openNew } = useTaskForm();
   return (
     <button
       type="button"
       className={isDesktop ? 'button button--primary' : 'fab'}
-      onClick={() => openNew({ listId })}
+      onClick={onClick}
       disabled={!canEdit}
-      aria-label="Add task"
+      aria-label={label}
     >
       <Plus size={isDesktop ? 16 : 22} aria-hidden="true" />
-      {isDesktop && 'Add task'}
+      {isDesktop && label}
     </button>
   );
+}
+
+export function AddTaskButton({ listId }: { listId?: string | null }) {
+  const { openNew } = useTaskForm();
+  return <AddButton label="Add task" onClick={() => openNew({ listId })} />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

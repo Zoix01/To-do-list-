@@ -1,0 +1,161 @@
+/* The streak counter uses the accent (SPEC §14) and aligned figures. */
+.habit-streak {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mono-figures {
+  font-variant-numeric: tabular-nums;
+}
+
+.section__toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.section__toggle:hover {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------- Habit form */
+
+.habit-form__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.habit-form__name .menu > .button {
+  border-color: transparent;
+  background: transparent;
+  padding: 0 var(--space-2);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: var(--hairline);
+  border-radius: var(--radius);
+}
+
+.stepper__value {
+  min-width: 28px;
+  text-align: center;
+  font-size: var(--text-body);
+}
+
+.weekday-picker .segmented__option {
+  padding: 0 var(--space-2);
+}
+
+/* ---------------------------------------------------------------- Habit detail */
+
+.habit-facts {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding-bottom: var(--space-4);
+  border-bottom: var(--hairline);
+}
+
+.habit-facts dt {
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  padding-top: 1px;
+}
+
+.habit-facts dd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.month-nav__title {
+  min-width: 140px;
+  text-align: center;
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  max-width: 420px;
+}
+
+.month-grid__weekday {
+  padding-bottom: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  text-align: center;
+}
+
+.month-grid__day {
+  aspect-ratio: 1;
+  min-height: 40px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--duration) var(--ease-out);
+}
+
+.month-grid__day:hover:not(:disabled) {
+  border-color: var(--border);
+}
+
+.month-grid__day.is-checked {
+  background: var(--habit-color);
+  color: var(--bg);
+  font-weight: var(--weight-medium);
+}
+
+.month-grid__day.is-missed {
+  border-color: color-mix(in srgb, var(--habit-color) 55%, transparent);
+  background: transparent;
+}
+
+.month-grid__day.is-rest:not(.is-checked) {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.month-grid__day.is-today {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.month-grid__day:disabled {
+  cursor: default;
+}
+
+.month-grid__day:disabled:not(.is-checked) {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.month-grid__day.is-outside {
+  visibility: hidden;
+}
+
+.month-legend {
+  margin-top: var(--space-2);
+}

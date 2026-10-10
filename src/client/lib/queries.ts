@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
+  HabitCreateInput,
+  HabitUpdateInput,
   ListCreateInput,
   ListUpdateInput,
+  RecurringCreateInput,
+  RecurringUpdateInput,
   TaskCreateInput,
   TaskUpdateInput,
 } from '../../shared/schemas';
-import type { List, Me, Priority, Task } from '../../shared/types';
+import type { HabitWithChecks, List, Me, Priority, RecurringTask, Task } from '../../shared/types';
 import { api, errorMessage } from './api';
 import { useFeedback } from './feedback';
 
@@ -15,7 +19,91 @@ export const keys = {
   tasks: ['tasks'] as const,
   openTasks: ['tasks', 'open'] as const,
   completedTasks: ['tasks', 'completed'] as const,
+  recurring: ['recurring'] as const,
+  habits: ['habits'] as const,
 };
+
+export function useRecurring() {
+  return useQuery({ queryKey: keys.recurring, queryFn: () => api<RecurringTask[]>('/recurring') });
+}
+
+export function useHabits() {
+  return useQuery({ queryKey: keys.habits, queryFn: () => api<HabitWithChecks[]>('/habits') });
+}
+
+export function useRecurringMutations() {
+  const queryClient = useQueryClient();
+  const { showError } = useFeedback();
+  // Creating / resuming a template can create this week's task, so refresh tasks too.
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: keys.recurring }),
+      queryClient.invalidateQueries({ queryKey: keys.tasks }),
+    ]);
+
+  const create = useMutation({
+    mutationFn: (input: RecurringCreateInput) =>
+      api<RecurringTask>('/recurring', { method: 'POST', body: input }),
+    onSuccess: invalidate,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, changes }: { id: string; changes: RecurringUpdateInput }) =>
+      api<RecurringTask>(`/recurring/${id}`, { method: 'PATCH', body: changes }),
+    onSuccess: invalidate,
+    onError: (error) => showError(errorMessage(error)),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => api(`/recurring/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidate,
+    onError: (error) => showError(errorMessage(error)),
+  });
+  return { create, update, remove };
+}
+
+export function useHabitMutations() {
+  const queryClient = useQueryClient();
+  const { showError } = useFeedback();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: keys.habits });
+
+  const create = useMutation({
+    mutationFn: (input: HabitCreateInput) =>
+      api<HabitWithChecks>('/habits', { method: 'POST', body: input }),
+    onSuccess: invalidate,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, changes }: { id: string; changes: HabitUpdateInput }) =>
+      api(`/habits/${id}`, { method: 'PATCH', body: changes }),
+    onSuccess: invalidate,
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => api(`/habits/${id}`, { method: 'DELETE' }),
+    onSuccess: invalidate,
+    onError: (error) => showError(errorMessage(error)),
+  });
+  /** Tick or un-tick one day; shown right away. */
+  const setCheck = useMutation({
+    mutationFn: ({ id, date, checked }: { id: string; date: string; checked: boolean }) =>
+      api(`/habits/${id}/checks/${date}`, { method: checked ? 'PUT' : 'DELETE' }),
+    onMutate: async ({ id, date, checked }) => {
+      await queryClient.cancelQueries({ queryKey: keys.habits });
+      const previous = queryClient.getQueryData<HabitWithChecks[]>(keys.habits);
+      queryClient.setQueryData<HabitWithChecks[]>(keys.habits, (habits) =>
+        habits?.map((habit) => {
+          if (habit.id !== id) return habit;
+          const without = habit.checks.filter((day) => day !== date);
+          return { ...habit, checks: checked ? [...without, date].sort() : without };
+        }),
+      );
+      return () => queryClient.setQueryData(keys.habits, previous);
+    },
+    onError: (error, _vars, restore) => {
+      restore?.();
+      showError(errorMessage(error));
+    },
+    onSettled: invalidate,
+  });
+  return { create, update, remove, setCheck };
+}
 
 export function useMe() {
   return useQuery({ queryKey: keys.me, queryFn: () => api<Me>('/me') });

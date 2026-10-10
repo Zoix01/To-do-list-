@@ -19,62 +19,10 @@ import { GripVertical, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { LIST_COLORS, type List, type ListColor } from '../../shared/types';
 import { ScreenHeader } from '../components/AppShell';
-import { ColorDot, Menu } from '../components/controls';
+import { ColorPicker } from '../components/ColorPicker';
 import { Dialog } from '../components/Dialog';
 import { useApp } from '../lib/appContext';
 import { useCompletedTasks, useListMutations, useOpenTasks } from '../lib/queries';
-
-const COLOR_NAMES: Record<ListColor, string> = {
-  '#E8925A': 'Orange',
-  '#A8B55E': 'Olive',
-  '#7FA36B': 'Green',
-  '#4FB077': 'Emerald',
-  '#5FA39A': 'Teal',
-  '#6A9FB5': 'Blue',
-  '#7B8FC9': 'Indigo',
-  '#9A82C2': 'Purple',
-  '#B77CD0': 'Orchid',
-  '#B87AA6': 'Plum',
-  '#C98A8A': 'Rose',
-  '#A08C76': 'Brown',
-};
-
-function ColorPicker({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: ListColor;
-  onChange: (color: ListColor) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Menu
-      label={`Color: ${COLOR_NAMES[value]}`}
-      disabled={disabled}
-      buttonContent={<ColorDot color={value} size="lg" />}
-    >
-      {(close) => (
-        <div className="swatches" role="group" aria-label="List color">
-          {LIST_COLORS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              className="swatch"
-              aria-label={COLOR_NAMES[color]}
-              aria-pressed={color === value}
-              style={{ background: color }}
-              onClick={() => {
-                onChange(color);
-                close();
-              }}
-            />
-          ))}
-        </div>
-      )}
-    </Menu>
-  );
-}
 
 function ListRow({
   list,

@@ -5,7 +5,7 @@ import type { Task } from '../../../shared/types';
 import { Checkbox, ColorDot } from '../../components/controls';
 import { Dialog } from '../../components/Dialog';
 import { useTaskForm } from '../../components/TaskFormProvider';
-import { PRIORITY_LABELS, PriorityTag } from '../../components/TaskRow';
+import { PRIORITY_LABELS, PriorityTag, WeeklyMark } from '../../components/TaskRow';
 import { useApp } from '../../lib/appContext';
 import { useTaskMutations } from '../../lib/queries';
 
@@ -39,6 +39,7 @@ export function TaskPeek({ task, onClose }: { task: Task | undefined; onClose: (
             >
               {task.title}
             </h2>
+            {task.recurringId && <WeeklyMark />}
           </div>
           <dl className="peek__facts">
             <dt>List</dt>

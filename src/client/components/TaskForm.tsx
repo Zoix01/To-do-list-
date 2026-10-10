@@ -1,15 +1,15 @@
-import { ChevronDown, TriangleAlert } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import type { TaskUpdateInput } from '../../shared/schemas';
 import { deadlineError, plannedDateError } from '../../shared/tasks';
-import { PRIORITIES, type ISODate, type Priority, type Task } from '../../shared/types';
+import type { ISODate, Priority, Task } from '../../shared/types';
 import { errorMessage } from '../lib/api';
 import { useApp } from '../lib/appContext';
 import { useTaskMutations } from '../lib/queries';
-import { ColorDot, DateButton, Menu, MenuItem } from './controls';
+import { DateButton } from './controls';
 import { ConfirmDialog } from './Dialog';
+import { ListPicker, PriorityPicker } from './pickers';
 import type { NewTaskDefaults } from './TaskFormProvider';
-import { PRIORITY_LABELS, PRIORITY_NUMBER } from './TaskRow';
 
 export function TaskForm({
   task,
@@ -20,7 +20,7 @@ export function TaskForm({
   defaults: NewTaskDefaults;
   onClose: () => void;
 }) {
-  const { today, lists, listsById, canEdit } = useApp();
+  const { today, canEdit } = useApp();
   const { create, update, remove } = useTaskMutations();
 
   const [title, setTitle] = useState(task?.title ?? '');
@@ -46,7 +46,6 @@ export function TaskForm({
       ? plannedDateError(plannedOverride, today, task ? task.plannedDate : undefined)
       : null;
   const pending = create.isPending || update.isPending;
-  const list = listId ? listsById.get(listId) : undefined;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -148,55 +147,12 @@ export function TaskForm({
 
         <span className="field-grid__label">Priority</span>
         <div className="field-grid__value">
-          <div className="segmented" role="radiogroup" aria-label="Priority">
-            {PRIORITIES.map((value) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={priority === value}
-                className="segmented__option"
-                onClick={() => setPriority(value)}
-                disabled={!canEdit}
-              >
-                <span className="segmented__number">{PRIORITY_NUMBER[value]}</span>
-                {PRIORITY_LABELS[value]}
-              </button>
-            ))}
-          </div>
+          <PriorityPicker value={priority} onChange={setPriority} disabled={!canEdit} />
         </div>
 
         <span className="field-grid__label">List</span>
         <div className="field-grid__value">
-          <Menu
-            label="List"
-            disabled={!canEdit}
-            buttonContent={
-              <>
-                <ColorDot color={list?.color ?? null} />
-                {list?.name ?? 'No list'}
-                <ChevronDown size={14} aria-hidden="true" />
-              </>
-            }
-          >
-            {(close) => (
-              <>
-                {[null, ...lists].map((option) => (
-                  <MenuItem
-                    key={option?.id ?? 'none'}
-                    selected={listId === (option?.id ?? null)}
-                    onSelect={() => {
-                      setListId(option?.id ?? null);
-                      close();
-                    }}
-                  >
-                    <ColorDot color={option?.color ?? null} />
-                    {option?.name ?? 'No list'}
-                  </MenuItem>
-                ))}
-              </>
-            )}
-          </Menu>
+          <ListPicker value={listId} onChange={setListId} disabled={!canEdit} />
         </div>
       </div>
 

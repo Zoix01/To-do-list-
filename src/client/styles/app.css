@@ -617,6 +617,37 @@
   color: var(--warning);
 }
 
+/* Weekly templates: a ring marker (templates can't be ticked off). */
+.template-ring {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0 9px;
+  border: 2px solid var(--check-color);
+  border-radius: 50%;
+}
+
+.task-row.is-paused .task-row__title,
+.task-row.is-paused .template-ring {
+  opacity: 0.55;
+}
+
+.paused-tag {
+  color: var(--text);
+  font-weight: var(--weight-medium);
+}
+
+@media (pointer: coarse) {
+  .template-ring {
+    margin: 0 15px;
+  }
+}
+
+.weekly-mark {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
 /* All tasks: list dot + name in the list color. */
 .task-row__list {
   display: inline-flex;
