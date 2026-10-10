@@ -125,6 +125,7 @@ Phase 1 creates `List`, `Task` (including the `recurringId` / `weekStart` column
 - If I change the deadline and `plannedManual` is false, recompute `plannedDate` with the same rule. If `plannedManual` is true, keep my planned date.
 - I can change the planned date (in the form or by dragging in the calendar); this sets `plannedManual = true`. I can also clear it ("unplan"), which sets `plannedDate = null`, `plannedManual = true`.
 - A planned date after the deadline is allowed, but the task shows a warning icon ("planned after deadline").
+- **No past planned dates:** setting a planned date before today is rejected — in the form (past days are not selectable), by calendar drops (§8.2), in the API, and (Phase 4) in the MCP tools. Clearing it ("unplan") is always allowed, and an existing past planned date may stay while other fields are edited.
 - The deadline is only changed in the task form, never by dragging.
 
 ### 5.2 Overdue flags (two levels)
@@ -198,7 +199,7 @@ In this order:
 Sections 5 and 6 are added in Phase 3; Phase 1 builds sections 1–4.
 
 Each task row (on every screen) shows, in this order on one line:
-- **checkbox** — a circle whose ring is drawn in the task's **list color** (neutral gray for no list); this replaces a separate list color dot;
+- **checkbox** — a circle whose ring is drawn in the task's **list color** (neutral gray for no list); this replaces a separate list color dot. Exception: in **All tasks** the ring shows the **priority** instead (§8.3);
 - **title** — high-priority titles use medium weight (500);
 - **priority number** in a small outlined tag: `0` low, `1` medium, `2` high (the form's priority buttons show the same numbers: "0 Low · 1 Medium · 2 High");
 - **deadline label**, then the **flag** if any, then the planned-after-deadline warning icon if any.
@@ -233,6 +234,7 @@ The metadata follows the title directly (not right-aligned), so everything is re
   - **Urgency** — see formula below
   - **List** — grouped by list (in list order), within each group sorted by deadline; loose tasks as a "No list" group at the end
 - Filter by one or more lists; **"No list"** is one of the filter options.
+- **Color by priority:** in All tasks the checkbox ring shows the task's priority, not its list (the list is available through the filter and the List sort): `2` high = red (`--danger`), `1` medium = amber (`--warning`), `0` low = neutral gray. Today, Completed and the calendar keep list colors.
 - Overdue tasks are always shown first within any sort, red before orange:
   - red tasks: most overdue (earliest deadline) first;
   - orange tasks: oldest planned date first;
