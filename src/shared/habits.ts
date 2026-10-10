@@ -7,7 +7,7 @@ import {
   mondayOf,
   startOfMonth,
 } from './dates';
-import type { Habit, HabitFrequency, ISODate } from './types';
+import type { Habit, HabitFrequency, ISODate, Weekday } from './types';
 
 /*
  * Habit logic (SPEC §7). Everything is expressed as a list of "periods":
@@ -185,6 +185,28 @@ export function completionRate(
   );
   const met = periods.filter((period) => period.met).length;
   return { met, total: periods.length, rate: periods.length ? met / periods.length : null, window };
+}
+
+/**
+ * Checks the frequency settings and returns them cleaned up (unused fields
+ * cleared, weekdays sorted), or an error message.
+ */
+export function normalizeHabitRules(
+  rules: Pick<Habit, 'frequency'> & { weekdays?: Weekday[]; target?: number | null },
+): { ok: true; rules: HabitRules } | { ok: false; error: string } {
+  const { frequency } = rules;
+  if (frequency === 'daily') return { ok: true, rules: { frequency, weekdays: [], target: null } };
+  if (frequency === 'weekdays') {
+    const weekdays = [...new Set(rules.weekdays ?? [])].sort((a, b) => a - b);
+    if (weekdays.length === 0) return { ok: false, error: 'Choose at least one weekday' };
+    return { ok: true, rules: { frequency, weekdays, target: null } };
+  }
+  const max = frequency === 'per_week' ? 7 : 31;
+  const target = rules.target;
+  if (!target || !Number.isInteger(target) || target < 1 || target > max) {
+    return { ok: false, error: `Target must be between 1 and ${max}` };
+  }
+  return { ok: true, rules: { frequency, weekdays: [], target } };
 }
 
 const UNITS: Record<HabitFrequency, [string, string]> = {

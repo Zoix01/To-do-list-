@@ -1,5 +1,18 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import type { ListColor, Priority } from '../../shared/types';
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
+import type {
+  HabitFrequency,
+  ListColor,
+  Priority,
+  RecurringMode,
+  Weekday,
+} from '../../shared/types';
 
 export const lists = sqliteTable('lists', {
   id: text('id').primaryKey(),
@@ -32,6 +45,43 @@ export const tasks = sqliteTable(
     // One instance per weekly template per week (SPEC §6).
     uniqueIndex('tasks_recurring_week_idx').on(table.recurringId, table.weekStart),
   ],
+);
+
+export const recurringTasks = sqliteTable('recurring_tasks', {
+  id: text('id').primaryKey(),
+  listId: text('list_id').references(() => lists.id),
+  title: text('title').notNull(),
+  notes: text('notes'),
+  priority: text('priority').$type<Priority>().notNull().default('medium'),
+  mode: text('mode').$type<RecurringMode>().notNull(),
+  weekday: integer('weekday').$type<Weekday>(),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  activeFrom: text('active_from').notNull(),
+  generatedThrough: text('generated_through'),
+  createdAt: text('created_at').notNull(),
+});
+
+export const habits = sqliteTable('habits', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  color: text('color').$type<ListColor>().notNull(),
+  icon: text('icon'),
+  frequency: text('frequency').$type<HabitFrequency>().notNull(),
+  weekdays: text('weekdays', { mode: 'json' }).$type<Weekday[]>().notNull().default([]),
+  target: integer('target'),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+export const habitChecks = sqliteTable(
+  'habit_checks',
+  {
+    habitId: text('habit_id')
+      .notNull()
+      .references(() => habits.id),
+    date: text('date').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.habitId, table.date] })],
 );
 
 export const sessions = sqliteTable('sessions', {

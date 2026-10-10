@@ -6,11 +6,16 @@ import {
   formatStreak,
   habitProgress,
   isDueToday,
+  normalizeHabitRules,
   showOnToday,
 } from './habits';
 import type { Habit, Weekday } from './types';
 
-const daily = { frequency: 'daily', weekdays: [], target: null } as const;
+const daily: Pick<Habit, 'frequency' | 'weekdays' | 'target'> = {
+  frequency: 'daily',
+  weekdays: [],
+  target: null,
+};
 const weekdays = (...days: Weekday[]) =>
   ({ frequency: 'weekdays', weekdays: days, target: null }) satisfies Partial<Habit>;
 const perWeek = (target: number) =>
@@ -185,5 +190,38 @@ describe('formatStreak', () => {
     expect(formatStreak(1, 'weekdays')).toBe('1 day');
     expect(formatStreak(5, 'per_week')).toBe('5 weeks');
     expect(formatStreak(1, 'per_month')).toBe('1 month');
+  });
+});
+
+describe('normalizeHabitRules', () => {
+  it('clears fields that the frequency does not use', () => {
+    expect(normalizeHabitRules({ frequency: 'daily', weekdays: [1], target: 3 })).toEqual({
+      ok: true,
+      rules: { frequency: 'daily', weekdays: [], target: null },
+    });
+    expect(normalizeHabitRules({ frequency: 'per_week', weekdays: [1], target: 3 })).toEqual({
+      ok: true,
+      rules: { frequency: 'per_week', weekdays: [], target: 3 },
+    });
+  });
+  it('sorts and de-duplicates weekdays, and requires at least one', () => {
+    expect(normalizeHabitRules({ frequency: 'weekdays', weekdays: [5, 1, 5] })).toEqual({
+      ok: true,
+      rules: { frequency: 'weekdays', weekdays: [1, 5], target: null },
+    });
+    expect(normalizeHabitRules({ frequency: 'weekdays', weekdays: [] })).toEqual({
+      ok: false,
+      error: 'Choose at least one weekday',
+    });
+  });
+  it('limits targets to 1–7 per week and 1–31 per month', () => {
+    expect(normalizeHabitRules({ frequency: 'per_week', target: 7 }).ok).toBe(true);
+    expect(normalizeHabitRules({ frequency: 'per_week', target: 8 })).toEqual({
+      ok: false,
+      error: 'Target must be between 1 and 7',
+    });
+    expect(normalizeHabitRules({ frequency: 'per_month', target: 31 }).ok).toBe(true);
+    expect(normalizeHabitRules({ frequency: 'per_month', target: 0 }).ok).toBe(false);
+    expect(normalizeHabitRules({ frequency: 'per_month', target: null }).ok).toBe(false);
   });
 });

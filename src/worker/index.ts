@@ -7,6 +7,8 @@ import { authRoutes, requireSession } from './auth';
 import * as schema from './db/schema';
 import type { AppEnv } from './env';
 import { listRoutes } from './routes/lists';
+import { habitRoutes } from './routes/habits';
+import { recurringRoutes } from './routes/recurring';
 import { taskRoutes } from './routes/tasks';
 
 const app = new Hono<AppEnv>().basePath('/api');
@@ -25,6 +27,8 @@ app.use(requireSession);
 app.get('/me', (c) => c.json<Me>({ timeZone: c.env.TIMEZONE }));
 app.route('/lists', listRoutes);
 app.route('/tasks', taskRoutes);
+app.route('/recurring', recurringRoutes);
+app.route('/habits', habitRoutes);
 
 app.notFound((c) => c.json({ error: 'Not found' }, 404));
 app.onError((error, c) => {

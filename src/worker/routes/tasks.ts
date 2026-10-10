@@ -8,19 +8,11 @@ import {
   plannedDateError,
 } from '../../shared/tasks';
 import type { Task } from '../../shared/types';
-import { lists, tasks } from '../db/schema';
-import type { AppEnv, Db } from '../env';
+import { tasks } from '../db/schema';
+import type { AppEnv } from '../env';
+import { assertListExists, emptyToNull } from '../helpers';
 import { badRequest, jsonError, notFound, readBody } from '../http';
-
-async function assertListExists(db: Db, listId: string | null | undefined): Promise<void> {
-  if (!listId) return;
-  const list = await db.select({ id: lists.id }).from(lists).where(eq(lists.id, listId)).get();
-  if (!list) throw badRequest('List not found');
-}
-
-function emptyToNull(text: string | null | undefined): string | null {
-  return text?.trim() ? text : null;
-}
+import { ensureWeeklyInstances } from '../weekly';
 
 export const taskRoutes = new Hono<AppEnv>()
   .get('/', async (c) => {
@@ -34,6 +26,8 @@ export const taskRoutes = new Hono<AppEnv>()
           .orderBy(desc(tasks.completedAt)),
       );
     }
+    // Weekly tasks for the current week are created lazily here (SPEC §6).
+    await ensureWeeklyInstances(db, c.get('today'));
     return c.json(
       await db.select().from(tasks).where(isNull(tasks.completedAt)).orderBy(asc(tasks.deadline)),
     );
@@ -124,6 +118,13 @@ export const taskRoutes = new Hono<AppEnv>()
       .where(and(eq(tasks.id, c.req.param('id')), isNull(tasks.completedAt)))
       .returning();
     if (!task) throw notFound('Open task not found');
+    // Completing a weekly instance creates next week's right away (SPEC §6).
+    if (task.recurringId) {
+      await ensureWeeklyInstances(c.get('db'), c.get('today'), {
+        templateIds: [task.recurringId],
+        includeNextWeek: true,
+      });
+    }
     return c.json(task);
   })
   .post('/:id/uncomplete', async (c) => {

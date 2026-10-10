@@ -1,7 +1,7 @@
 import { asc, eq, max } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { listCreateSchema, listOrderSchema, listUpdateSchema } from '../../shared/schemas';
-import { lists, tasks } from '../db/schema';
+import { lists, recurringTasks, tasks } from '../db/schema';
 import type { AppEnv } from '../env';
 import { badRequest, notFound, readBody } from '../http';
 
@@ -61,10 +61,14 @@ export const listRoutes = new Hono<AppEnv>()
     const list = await db.select({ id: lists.id }).from(lists).where(eq(lists.id, id)).get();
     if (!list) throw notFound('List not found');
     const now = new Date().toISOString();
+    // Weekly templates follow the same choice as the tasks (SPEC §5.4).
     await db.batch([
       mode === 'move'
         ? db.update(tasks).set({ listId: null, updatedAt: now }).where(eq(tasks.listId, id))
         : db.delete(tasks).where(eq(tasks.listId, id)),
+      mode === 'move'
+        ? db.update(recurringTasks).set({ listId: null }).where(eq(recurringTasks.listId, id))
+        : db.delete(recurringTasks).where(eq(recurringTasks.listId, id)),
       db.delete(lists).where(eq(lists.id, id)),
     ]);
     return c.body(null, 204);

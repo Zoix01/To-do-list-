@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isISODate } from './dates';
-import { LIST_COLORS, PRIORITIES } from './types';
+import { HABIT_FREQUENCIES, LIST_COLORS, PRIORITIES, RECURRING_MODES } from './types';
 
 const isoDate = z.string().refine(isISODate, 'Must be a date in YYYY-MM-DD format');
 const title = z.string().trim().min(1, 'Title is required').max(500);
@@ -29,6 +29,65 @@ export const taskCreateSchema = z.object({
   plannedDate: isoDate.nullable().optional(),
 });
 export type TaskCreateInput = z.infer<typeof taskCreateSchema>;
+
+const weekday = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+  z.literal(6),
+  z.literal(7),
+]);
+
+export const recurringCreateSchema = z.object({
+  title,
+  notes: notes.optional(),
+  priority: z.enum(PRIORITIES).optional(),
+  listId: z.string().nullable().optional(),
+  mode: z.enum(RECURRING_MODES),
+  /** Required for 'fixed'. */
+  weekday: weekday.nullable().optional(),
+});
+export type RecurringCreateInput = z.infer<typeof recurringCreateSchema>;
+
+export const recurringUpdateSchema = z
+  .object({
+    title,
+    notes,
+    priority: z.enum(PRIORITIES),
+    listId: z.string().nullable(),
+    mode: z.enum(RECURRING_MODES),
+    weekday: weekday.nullable(),
+    active: z.boolean(),
+  })
+  .partial()
+  .strict();
+export type RecurringUpdateInput = z.infer<typeof recurringUpdateSchema>;
+
+const habitName = z.string().trim().min(1, 'Name is required').max(100);
+
+export const habitCreateSchema = z.object({
+  name: habitName,
+  color: z.enum(LIST_COLORS),
+  frequency: z.enum(HABIT_FREQUENCIES),
+  weekdays: z.array(weekday).max(7).optional(),
+  target: z.number().int().nullable().optional(),
+});
+export type HabitCreateInput = z.infer<typeof habitCreateSchema>;
+
+export const habitUpdateSchema = z
+  .object({
+    name: habitName,
+    color: z.enum(LIST_COLORS),
+    frequency: z.enum(HABIT_FREQUENCIES),
+    weekdays: z.array(weekday).max(7),
+    target: z.number().int().nullable(),
+    archived: z.boolean(),
+  })
+  .partial()
+  .strict();
+export type HabitUpdateInput = z.infer<typeof habitUpdateSchema>;
 
 export const taskIdsSchema = z.object({ ids: z.array(z.string()).min(1).max(10_000) });
 
