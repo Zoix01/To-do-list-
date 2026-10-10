@@ -1,10 +1,10 @@
 import { Trash2, TriangleAlert } from 'lucide-react';
 import type { DOMAttributes, HTMLAttributes } from 'react';
 import { deadlineLabel, isPlannedAfterDeadline, taskFlag } from '../../shared/tasks';
-import type { Priority, Task } from '../../shared/types';
+import type { List, Priority, Task } from '../../shared/types';
 import { useApp } from '../lib/appContext';
 import { useTaskMutations } from '../lib/queries';
-import { Checkbox } from './controls';
+import { Checkbox, ColorDot } from './controls';
 import { useTaskForm } from './TaskFormProvider';
 
 /** Priorities are shown as numbers: 0 low, 1 medium, 2 high. */
@@ -45,6 +45,24 @@ export interface RowDrag {
   attributes: HTMLAttributes<HTMLElement>;
   listeners: DOMAttributes<HTMLElement> | undefined;
   isDragging: boolean;
+}
+
+/** List color dot + name in the list color (All tasks, where the ring shows priority). */
+function ListLabel({ list, className }: { list: List | undefined; className: string }) {
+  return (
+    <span
+      className={`task-row__list ${className}`}
+      style={list ? { color: list.color } : undefined}
+      title={list?.name ?? 'No list'}
+    >
+      <ColorDot color={list?.color ?? null} />
+      {list ? (
+        <span className="task-row__list-name">{list.name}</span>
+      ) : (
+        <span className="visually-hidden">No list</span>
+      )}
+    </span>
+  );
 }
 
 export function TaskRow({
@@ -97,7 +115,11 @@ export function TaskRow({
               <span className="visually-hidden">Planned after deadline</span>
             </span>
           )}
+          {/* Phones: the list goes at the end of the metadata line. */}
+          {ringColor === 'priority' && <ListLabel list={list} className="task-row__list--inline" />}
         </span>
+        {/* Desktop: the list sits at the right end of the row. */}
+        {ringColor === 'priority' && <ListLabel list={list} className="task-row__list--end" />}
       </button>
     </li>
   );

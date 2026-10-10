@@ -236,6 +236,7 @@ The metadata follows the title directly (not right-aligned), so everything is re
   - **Priority** — three sections, `2 · High`, `1 · Medium`, `0 · Low` (always shown, even when empty), each sorted by deadline (overdue first). **Dragging a task into another section changes its priority** (long-press on touch, like the calendar). Order within a section is automatic; there is no manual ordering. The list filter still applies.
 - Filter by one or more lists; **"No list"** is one of the filter options.
 - **Color by priority:** in All tasks the checkbox ring shows the task's priority, not its list (the list is available through the filter and the List sort): `2` high = red (`--danger`), `1` medium = amber (`--warning`), `0` low = neutral gray. Today, Completed and the calendar keep list colors.
+- So the list stays visible, each All tasks row also shows the **list color dot and the list name in the list color** at the right end of the row (on phones, at the end of the metadata line). Loose tasks show only a gray dot.
 - Overdue tasks are always shown first within any sort, red before orange:
   - red tasks: most overdue (earliest deadline) first;
   - orange tasks: oldest planned date first;

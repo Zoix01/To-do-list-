@@ -617,6 +617,32 @@
   color: var(--warning);
 }
 
+/* All tasks: list dot + name in the list color. */
+.task-row__list {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--text-meta);
+}
+
+.task-row__list-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-row__list--end {
+  flex-shrink: 0;
+  max-width: 180px;
+  margin-left: auto;
+  padding-left: var(--space-3);
+}
+
+.task-row__list--inline {
+  display: none;
+}
+
 /* Priority sort: rows can be dragged between the 2 / 1 / 0 sections. */
 .task-row--draggable .task-row__main {
   cursor: grab;
@@ -671,6 +697,12 @@
   }
   .task-row {
     min-height: 52px;
+  }
+  .task-row__list--end {
+    display: none;
+  }
+  .task-row__list--inline {
+    display: inline-flex;
   }
 }
 

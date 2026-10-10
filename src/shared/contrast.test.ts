@@ -46,6 +46,16 @@ describe('design token contrast (WCAG AA)', () => {
     expect(contrast(token(text), token(background))).toBeGreaterThanOrEqual(4.5);
   });
 
+  // All tasks shows the list name in the list color, on the page and on a hovered row.
+  it.each(
+    LIST_COLORS.flatMap((color) => [
+      [color, 'bg'],
+      [color, 'surface'],
+    ]),
+  )('list-colored text %s on --%s ≥ 4.5', (color, background) => {
+    expect(contrast(color, token(background))).toBeGreaterThanOrEqual(4.5);
+  });
+
   // Filled calendar chips use --bg text on the list color (and on --no-list gray).
   it.each([...LIST_COLORS, token('text-muted')])('--bg text on %s ≥ 4.5', (color) => {
     expect(contrast(token('bg'), color)).toBeGreaterThanOrEqual(4.5);
