@@ -27,28 +27,38 @@ I have a JavaScript background but **no experience with Cloudflare**. Walk me th
 
 ## 2. Tech stack
 
-- **Frontend:** React + TypeScript + Vite, built as a PWA (manifest + service worker so it installs on Android/iOS home screen). Hosted on **Cloudflare Pages**.
-- **Backend API:** Cloudflare **Workers** using Hono.
-- **Database:** Cloudflare **D1** (SQLite) with Drizzle ORM and migrations.
+- **Hosting:** a **single Cloudflare Worker** that serves the built frontend as static assets *and* runs the API (and later the MCP server), all on one origin. Not Cloudflare Pages: a separate `*.pages.dev` frontend and `*.workers.dev` API are different sites, so the `SameSite=Strict` session cookie would not be sent.
+- **Repo layout:** one npm package (no workspaces): `src/client` (React app), `src/worker` (Hono API), `src/shared` (shared types + pure logic + tests). Local dev runs through one Vite dev server with `@cloudflare/vite-plugin` (Worker + local D1).
+- **Frontend:** React + TypeScript + Vite, built as a PWA (manifest + service worker so it installs on the home screen / desktop). App name: **"Planner"**, with a simple accent-colored icon (no emoji, no gradient). See §2.1 for offline behavior.
+- **Backend API:** Hono on the Worker. Request validation with Zod.
+- **Database:** Cloudflare **D1** (SQLite) with Drizzle ORM and migrations. IDs are UUIDs; timestamps are ISO 8601 UTC strings.
+- **Data fetching:** TanStack Query. Data is refetched when the app regains focus/visibility and after every mutation. No realtime push.
 - **Calendar UI:** FullCalendar (MIT plugins only: daygrid, timegrid not needed, interaction) — must support touch drag on mobile.
 - **Dates:** date-fns. All "dates" are calendar dates stored as `YYYY-MM-DD` strings, no times. "Today" is computed in the **Europe/Prague** time zone.
 - **Week:** Monday–Sunday.
 - **Tests:** Vitest. All date/recurrence/streak/sorting logic lives in pure functions in a shared module and has unit tests (see §10).
 - **UI language:** English. Date formats: e.g. "Mon 12 Oct". **Dark mode only** for now (see §14).
-- **Content language:** I write tasks, lists and habits in **Czech**. Everything must handle Czech diacritics (č ř ž š ě ů ď ť ň á é í ó ú ý): fonts, database, search, sorting. Sort text with `Intl.Collator('cs')` (Czech rules, e.g. "ch" comes after "h"). Search is case- and diacritic-insensitive ("ukol" finds "úkol").
+- **Content language:** I write tasks, lists and habits in **Czech**. Everything must handle Czech diacritics (č ř ž š ě ů ď ť ň á é í ó ú ý): fonts, database, search, sorting. Sort text with `Intl.Collator('cs')` (Czech rules, e.g. "ch" comes after "h"). There is **no search** (no search UI, no search function) — only filters and lists.
 - Use TypeScript types shared between frontend and backend.
 
 Before choosing library versions, check their current docs — do not rely on memory for Cloudflare, MCP or FullCalendar APIs.
+
+### 2.1 Offline (read-only)
+- The app shell is cached by the service worker and loads offline.
+- The last fetched data is persisted on the device (TanStack Query persister + IndexedDB), so **every screen shows my data offline**.
+- While offline, editing is disabled (no create/edit/complete/delete/drag) and one muted line explains why ("Offline — changes are disabled until you reconnect"). There is **no offline edit queue**.
 
 ---
 
 ## 3. Authentication
 
 - Single user, single password. The password hash is stored as a Worker secret (not in the database, not in the repo).
-- I log in **once per device** and then never again. Login screen asks for the password only. On success, set an HttpOnly, Secure, SameSite=Strict session cookie valid for 1 year, **renewed on every visit** (sliding expiry), so a device I use regularly never asks again. The installed PWA must keep the session too.
+- **Hashing:** PBKDF2-SHA256 via WebCrypto, 100,000 iterations (the Workers maximum), random 16-byte salt. The secret stores algorithm, iterations, salt and hash in one string. `npm run set-password` prompts for the password, hashes it locally and pipes it to `wrangler secret put`.
+- I log in **once per device** and then never again. Login screen asks for the password only. On success, set an HttpOnly, Secure, SameSite=Strict session cookie valid for 1 year, **renewed on visits** (sliding expiry), so a device I use regularly never asks again. The installed PWA must keep the session too.
+- **Sessions are stored in D1** (`Session` table, §4), so they can be revoked. The cookie holds a random token; the database stores only its SHA-256 hash. Sliding renewal (cookie + DB expiry) happens at most **once per day** per session, to avoid a DB write on every request.
 - Every API route except login requires a valid session.
-- Basic brute-force protection: after 5 wrong attempts, wait 1 minute.
-- A "Log out" button in settings.
+- Brute-force protection: after 5 wrong attempts **from the same IP**, that IP must wait 1 minute. Attempts are tracked in D1 (`LoginAttempt`, §4), so the limit holds across Worker isolates. Per IP, so nobody else can lock me out globally.
+- A "Log out" button in settings. It ends **only the current device's** session.
 
 ---
 
@@ -90,7 +100,15 @@ Habit
 
 HabitCheck
   habitId, date (YYYY-MM-DD)   — unique per habit per date
+
+Session
+  id, tokenHash (SHA-256 of the cookie token), createdAt, expiresAt, lastRenewedAt
+
+LoginAttempt
+  ip, failedCount, firstFailedAt, lockedUntil (nullable)
 ```
+
+Phase 1 creates `List`, `Task` (including the `recurringId` / `weekStart` columns, so Phase 3 needs no task-table change), `Session` and `LoginAttempt`. `RecurringTask`, `Habit` and `HabitCheck` are added in Phase 3.
 
 ---
 
@@ -98,6 +116,10 @@ HabitCheck
 
 ### 5.1 Creating and editing
 - A task cannot be saved without a deadline. The deadline picker is shown prominently in the create form — choosing it is a deliberate step, there is no default deadline.
+- **No past deadlines:** a deadline before today is rejected when creating a task or when changing a task's deadline — in the form, in the API, and (Phase 4) in the MCP tools. Exceptions:
+  - An existing task whose deadline is already in the past stays editable (title, notes, priority, list, planned date) as long as the deadline itself is not changed.
+  - Undoing a completed task restores its original dates even if they are in the past.
+  - Weekly instances generated by the server (§6) are not subject to this check.
 - When a deadline is set and `plannedManual` is false:
   `plannedDate = max(today, deadline − 1 day)`
 - If I change the deadline and `plannedManual` is false, recompute `plannedDate` with the same rule. If `plannedManual` is true, keep my planned date.
@@ -115,13 +137,13 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
 
 ### 5.3 Completing
 - One tick completes the task. It disappears from every view, including both of its calendar entries (planned and deadline).
-- Completed tasks go to the **Completed** archive, grouped by completion date, newest first. From there I can **undo** (restore it with its original dates) or delete it permanently (with confirmation).
+- Completed tasks go to the **Completed** archive, grouped by completion date (the date in the configured time zone, not UTC), newest first. From there I can **undo** (restore it with its original dates) or delete it permanently (with confirmation).
 - Deleting an uncompleted task asks for confirmation.
 
 ### 5.4 Lists
-- Create, rename, recolor, reorder lists.
+- Create, rename, recolor, reorder lists. Reordering is by **drag** (touch-friendly, `@dnd-kit`).
 - Every task and calendar entry is shown in its list's color. Loose tasks use neutral gray.
-- Deleting a list asks: "Move its tasks to No list" or "Delete its tasks too".
+- Deleting a list asks: "Move its tasks to No list" or "Delete its tasks too". "Delete its tasks too" deletes **all** of its tasks, including completed ones in the archive. (What happens to the list's weekly templates is decided in Phase 3.)
 
 ---
 
@@ -169,7 +191,18 @@ In this order:
 5. **This week, unplanned** — flexible weekly instances of the current week with no planned date
 6. **Habits due today** — tickable
 
-Each task row shows: checkbox, title, list color dot, priority marker, deadline ("due Fri 16 Oct", or "due in 3 days"), flag if any. Tapping a row opens the edit form. A "+" button adds a task.
+**Deduplication:** each task appears **once**, in the first section (in the order above) that it matches. E.g. an overdue task planned for today is shown only under Overdue.
+
+Sections 5 and 6 are added in Phase 3; Phase 1 builds sections 1–4.
+
+Each task row shows: checkbox, title, list color dot, priority marker, deadline label, flag if any. Tapping a row opens the edit form. A "+" button adds a task.
+
+**Deadline label** (used everywhere a task row shows its deadline):
+- deadline today → "due today"
+- deadline tomorrow → "due tomorrow"
+- 2–6 days ahead → "due in N days"
+- 7+ days ahead → "due Fri 16 Oct"
+- deadline in the past → "due Fri 9 Oct" (absolute date) together with the red flag
 
 ### 8.2 Calendar
 - **Month** and **Week** views, toggle at the top. On phone it opens on Week, on desktop on Month.
@@ -188,7 +221,11 @@ Each task row shows: checkbox, title, list color dot, priority marker, deadline 
   - **Deadline** — earliest first
   - **Urgency** — see formula below
   - **List** — grouped by list (in list order), within each group sorted by deadline; loose tasks as a "No list" group at the end
-- Filter by one or more lists. Overdue tasks are always shown first within any sort, red before orange.
+- Filter by one or more lists; **"No list"** is one of the filter options.
+- Overdue tasks are always shown first within any sort, red before orange:
+  - red tasks: most overdue (earliest deadline) first;
+  - orange tasks: oldest planned date first;
+  - in the **List** sort, overdue tasks are shown first **inside their own list group** (not pulled above all groups).
 - **Urgency formula** (pure function, unit tested):
   ```
   weight = { high: 3, medium: 2, low: 1 }[priority]
@@ -216,8 +253,8 @@ Tools (read + add/edit; **no completing, no deleting**):
 - `get_overview(from, to)` — for a date range: overdue tasks, tasks planned per day, deadlines per day, unplanned tasks, habits with their streaks and completion in the range, tasks completed in the range. Designed so Claude can write a weekly review.
 - `list_tasks(filters)` — filter by list, status (open/completed), deadline range, flag; returns all task fields plus list name and flag.
 - `list_lists()` and `list_habits()`
-- `create_task(title, deadline, listName?, priority?, plannedDate?, notes?)` — same rules as the app (deadline required, auto planned date). Match `listName` case-insensitively; return an error listing valid names if not found.
-- `update_task(id, fields)` — title, notes, priority, deadline, plannedDate, listName. Cannot set completedAt.
+- `create_task(title, deadline, listName?, priority?, plannedDate?, notes?)` — same rules as the app (deadline required, no past deadline, auto planned date). Match `listName` case-insensitively; return an error listing valid names if not found.
+- `update_task(id, fields)` — title, notes, priority, deadline, plannedDate, listName. Cannot set completedAt. A changed deadline must not be in the past (§5.1).
 
 Tool descriptions must explain the deadline/planned-date concepts and the flag meanings so Claude interprets the data correctly. Settings screen shows the connector URL and short setup steps.
 
@@ -227,7 +264,9 @@ Tool descriptions must explain the deadline/planned-date concepts and the flag m
 
 Unit tests (Vitest) for every pure function, covering at least:
 - planned-date default: deadline tomorrow, today, in the past, far future; recompute on deadline change; no recompute when `plannedManual`
+- deadline validation: past deadline rejected on create and on deadline change; existing past-deadline task editable when the deadline is unchanged
 - flags: red, orange, none, planned-after-deadline warning
+- deadline label rules (§8.1) and Today section deduplication
 - urgency ordering, including overdue first and tie-breaking
 - recurrence: fixed and flexible instance dates; idempotent generation; generation across a missed week; next-week instance on completion; week boundaries (Sunday → Monday) and year boundaries
 - habit due-today and streaks for all four frequencies, including "today not yet ticked", month boundaries, and weeks crossing months
@@ -241,7 +280,7 @@ All tests must pass before each phase is called done.
 
 Stop at the end of each phase, tell me exactly how to try it (locally and deployed), and wait for my OK before continuing.
 
-1. **Setup + tasks:** project scaffold, Cloudflare setup walkthrough, D1 schema, login, lists, tasks with deadlines/planned dates/flags/priority, Today screen, All tasks with sorting, Completed archive. Deployed and installable on my phone.
+1. **Setup + tasks:** project scaffold, Cloudflare setup walkthrough (starting from creating a Cloudflare account), D1 schema, login, lists, tasks with deadlines/planned dates/flags/priority, Today screen (sections 1–4), All tasks with sorting, Completed archive, read-only offline (§2.1). Deployed and installable on my phone (Android) and desktop (Windows).
 2. **Calendar:** month/week views, planned + deadline entries, drag to plan, unplanned tray, mobile touch drag.
 3. **Weekly tasks and habits:** recurrence, Weekly screen, habits with all frequencies, streaks, habit detail.
 4. **Claude connector:** MCP server, auth, tools, setup instructions.
@@ -257,6 +296,7 @@ The repo is public on GitHub so others can deploy their own single-user copy.
 
 - **No personal data or secrets in the repo**: no passwords, hashes, account IDs, database IDs or my URLs. Commit `wrangler.example.toml` (or equivalent) with placeholders; the real config is gitignored. Secrets are set with `wrangler secret put`.
 - Provide a `npm run set-password` script that hashes a password and stores it as the Worker secret.
+- I (the owner) use Windows and Android only; the walkthrough targets those, but nothing should be platform-specific in a way that breaks iOS/macOS for others.
 - `README.md` has a **"Deploy your own"** section a stranger can follow from zero: prerequisites, create Cloudflare account, clone, configure, create D1 database, run migrations, set password, deploy, install the PWA, connect Claude.
 - The default time zone (Europe/Prague) is a config value, not hardcoded.
 - MIT license. Sensible `.gitignore`. Conventional, small commits with clear messages.
