@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     cloudflare(),
-    VitePWA({
+    // The PWA files belong to the browser build only, not to the Worker bundle.
+    ...VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
@@ -36,6 +37,9 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
       },
-    }),
+    }).map((plugin) => ({
+      ...plugin,
+      applyToEnvironment: (environment: { name: string }) => environment.name === 'client',
+    })),
   ],
 });
