@@ -4,7 +4,7 @@ A personal task planner for one person. Tasks have a required **deadline** and a
 
 Each deployment is single-user: you deploy your own copy and protect it with your own password.
 
-> Status: Phases 1–3 are done: tasks and lists, Today, All tasks, Completed, a calendar with drag-to-plan, weekly tasks, habits with streaks, and read-only offline use. The Claude connector is next. See [SPEC.md](SPEC.md).
+> Status: Phases 1–4 are done: tasks and lists, Today, All tasks, Completed, a calendar with drag-to-plan, weekly tasks, habits with streaks, read-only offline use, and a Claude connector. See [SPEC.md](SPEC.md).
 
 | Today | Calendar |
 |---|---|
@@ -26,6 +26,7 @@ _Screenshots use made-up sample data. A new installation starts empty._
 - **Weekly tasks** are created lazily when the app loads, one per template per week, so no scheduled job is needed.
 - **Login** uses one password. Its PBKDF2 hash is stored as a Worker secret, never in the database or in this repo. After logging in, a device stays logged in for a year, and the session renews itself whenever you use it.
 - **Offline** the app shows your last loaded data read-only. Changes need a connection.
+- **Claude connector:** the same Worker serves an OAuth-protected MCP endpoint at `/mcp` ([Cloudflare's OAuth provider](https://github.com/cloudflare/workers-oauth-provider) plus the MCP SDK). Connections and tokens live in a KV namespace (`OAUTH_KV`). Claude follows the same task rules as the app.
 
 ```
 src/
@@ -127,7 +128,15 @@ npm run db:migrate:remote
 
 This applies the SQL files in `migrations/` to your Cloudflare database. Answer `y` when it asks for confirmation.
 
-### 8. Deploy
+### 8. Create the store for the Claude connector
+
+```bash
+npx wrangler kv namespace create OAUTH_KV
+```
+
+This creates a small key-value store (also free) where the Claude connector keeps its connections and tokens, stored only as hashes. Copy the printed `id` into `wrangler.jsonc`, replacing `REPLACE_WITH_YOUR_KV_NAMESPACE_ID`. If Wrangler offers to add the config for you, answer **no**. You can skip this step if you don't want the connector; the app works without it.
+
+### 9. Deploy
 
 ```bash
 npm run deploy
@@ -135,7 +144,7 @@ npm run deploy
 
 This type-checks, builds the app and uploads the Worker. On your first deploy, Wrangler may ask you to pick a `workers.dev` subdomain; any free name works. At the end it prints your app's URL, for example `https://planner.<your-subdomain>.workers.dev`.
 
-### 9. Set your password
+### 10. Set your password
 
 ```bash
 npm run set-password
@@ -143,7 +152,7 @@ npm run set-password
 
 This asks for a password (at least 8 characters), hashes it on your computer and stores the hash as the `PASSWORD_HASH` secret of your Worker. It takes effect right away. To change the password later, run it again.
 
-### 10. Log in and install the app
+### 11. Log in and install the app
 
 Open your app's URL and log in with your password.
 
@@ -153,9 +162,17 @@ Open your app's URL and log in with your password.
 
 You stay logged in on each device for as long as you keep using it.
 
-### 11. Connect Claude
+### 12. Connect Claude
 
-Coming in a later version: an MCP connector that lets claude.ai read and add tasks.
+The app has a built-in connector (a remote MCP server at `/mcp`) that lets Claude read your tasks, lists and habits and create or edit tasks. It can't complete or delete anything. Only Claude can connect, and only with your app password.
+
+1. In the app, open **Settings → Claude connector** and copy the URL (`https://planner.<your-subdomain>.workers.dev/mcp`).
+2. In Claude (claude.ai), open **Settings → Connectors → Add custom connector**, paste the URL and add it.
+3. Select **Connect**. A Planner page opens and asks for your app password; enter it and select **Connect**.
+
+The connection then works in Claude on the web, desktop and phone, until you disconnect it under **Settings → Claude connector → Connected apps** in the app. Claude Code can connect the same way (`claude mcp add --transport http planner <URL>`).
+
+Things you can ask, for example: *"Write me a review of last week"*, *"What's overdue?"*, *"Add a task to Práce: prepare the presentation, due Friday, high priority"*.
 
 ### Updating later
 
