@@ -35,7 +35,15 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        // Server routes, not app pages: the API and the Claude connector's OAuth pages.
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/mcp(\/|$)/,
+          /^\/authorize(\?|$)/,
+          /^\/token(\?|$)/,
+          /^\/register(\?|$)/,
+          /^\/\.well-known\//,
+        ],
       },
     }).map((plugin) => ({
       ...plugin,
