@@ -7,8 +7,17 @@
   "assets": {
     // Unknown paths serve index.html so client-side routes work.
     "not_found_handling": "single-page-application",
-    // Only /api/* reaches the Worker; everything else is served as static files.
-    "run_worker_first": ["/api/*"]
+    // These paths reach the Worker; everything else is served as static files.
+    // /mcp, /authorize, /token, /register and /.well-known/* are the Claude connector.
+    "run_worker_first": [
+      "/api/*",
+      "/mcp",
+      "/mcp/*",
+      "/authorize",
+      "/token",
+      "/register",
+      "/.well-known/*"
+    ]
   },
   "vars": {
     // IANA time zone used to decide what "today" is.
@@ -21,6 +30,13 @@
       // Printed by `npx wrangler d1 create planner`.
       "database_id": "REPLACE_WITH_YOUR_DATABASE_ID",
       "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      // Claude connector grants and tokens. Printed by `npx wrangler kv namespace create OAUTH_KV`.
+      "binding": "OAUTH_KV",
+      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
     }
   ]
 }

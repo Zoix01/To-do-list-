@@ -4,3 +4,4 @@ migrations/
 .wrangler/
 package-lock.json
 SPEC.md
+wrangler.example.jsonc
