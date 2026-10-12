@@ -284,6 +284,17 @@ Tools (read + add/edit; **no completing, no deleting**):
 
 Tool descriptions must explain the deadline/planned-date concepts and the flag meanings so Claude interprets the data correctly. Settings screen shows the connector URL and short setup steps.
 
+### 9.1 Phase 4 decisions
+Based on Anthropic's connector authentication requirements (https://claude.com/docs/connectors/building/authentication):
+- **Same Worker**, MCP endpoint at `/mcp` (Streamable HTTP). Cloudflare's `workers-oauth-provider` wraps the Worker and serves OAuth discovery (`/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`), client registration (`/register`, DCR) and `/token`; CIMD is also enabled. Unauthenticated `/mcp` requests get `401` with a `resource_metadata` pointer. PKCE S256 is required. Grants/tokens live in a KV namespace bound as `OAUTH_KV` (stored as hashes). The Worker's `run_worker_first` routes must include `/mcp`, `/authorize`, `/token`, `/register` and `/.well-known/*`.
+- **Only Claude can connect:** registration and authorization accept only Claude's redirect URIs — `https://claude.ai/api/mcp/auth_callback` (claude.ai web, desktop, mobile) and Claude Code's loopback `http://localhost/callback` / `http://127.0.0.1/callback` on any port. Anything else is rejected.
+- **Authorization page** (`/authorize`): server-rendered in the app's style; shows the client's name and its redirect host, and asks for the **app password** (same hash and the same per-IP 5-attempt lockout as the login). Clickjacking protection (`frame-ancestors 'none'`).
+- **Connection lifetime:** until I disconnect. Short-lived access tokens (about 1 hour) renewed with rotating refresh tokens; refresh tokens don't expire on their own.
+- **Settings → Claude connector:** the connector URL with a copy button, short setup steps, and a list of **connected apps** (name, connected date) with **Disconnect**, which revokes the grant immediately.
+- **Shared rules:** task creation/editing is moved into one server module used by both the app API and the MCP tools, so Claude follows exactly the app's rules (deadline required, no past deadline or planned date, unplanned by default, list by name). Reads also generate the current week's weekly instances.
+- Every tool result includes `today` and the time zone. `get_overview` accepts ranges up to 92 days.
+- Also in this phase: when loading tasks fails while online, the app shows one line ("Couldn't load your tasks. Try again.") instead of failing silently.
+
 ---
 
 ## 10. Testing requirements
