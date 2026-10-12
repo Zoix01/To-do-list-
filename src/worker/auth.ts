@@ -4,7 +4,7 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { afterFailedAttempt, lockRemaining, type AttemptState } from '../shared/loginThrottle';
 import { loginSchema } from '../shared/schemas';
 import { loginAttempts, sessions } from './db/schema';
-import type { AppEnv } from './env';
+import type { AppEnv, Db, Env } from './env';
 import { jsonError, readBody } from './http';
 import { verifyPassword } from './password';
 
@@ -67,50 +67,81 @@ export const requireSession: MiddlewareHandler<AppEnv> = async (c, next) => {
   await next();
 };
 
+export type PasswordCheck =
+  | { ok: true }
+  | { ok: false; reason: 'not_set' }
+  | { ok: false; reason: 'wrong' }
+  | { ok: false; reason: 'locked'; retryAfterSeconds: number };
+
+/**
+ * Checks the app password with the per-IP lockout (SPEC §3). Shared by the
+ * login and the Claude connector's authorization page.
+ */
+export async function checkPassword(
+  db: Db,
+  env: Env,
+  ip: string,
+  password: string,
+): Promise<PasswordCheck> {
+  if (!env.PASSWORD_HASH) return { ok: false, reason: 'not_set' };
+  const now = Date.now();
+  const row = await db.select().from(loginAttempts).where(eq(loginAttempts.ip, ip)).get();
+  const state: AttemptState | null = row
+    ? {
+        failedCount: row.failedCount,
+        lockedUntil: row.lockedUntil ? Date.parse(row.lockedUntil) : null,
+      }
+    : null;
+  const waitMs = lockRemaining(state, now);
+  if (waitMs > 0)
+    return { ok: false, reason: 'locked', retryAfterSeconds: Math.ceil(waitMs / 1000) };
+
+  if (await verifyPassword(password, env.PASSWORD_HASH)) {
+    if (row) await db.delete(loginAttempts).where(eq(loginAttempts.ip, ip));
+    return { ok: true };
+  }
+  const next = afterFailedAttempt(state, now);
+  const values = {
+    failedCount: next.failedCount,
+    lockedUntil: next.lockedUntil ? new Date(next.lockedUntil).toISOString() : null,
+  };
+  await db
+    .insert(loginAttempts)
+    .values({ ip, firstFailedAt: new Date(now).toISOString(), ...values })
+    .onConflictDoUpdate({ target: loginAttempts.ip, set: values });
+  if (next.lockedUntil) {
+    return {
+      ok: false,
+      reason: 'locked',
+      retryAfterSeconds: Math.ceil((next.lockedUntil - now) / 1000),
+    };
+  }
+  return { ok: false, reason: 'wrong' };
+}
+
+export function clientIp(request: Request): string {
+  return request.headers.get('CF-Connecting-IP') ?? 'local';
+}
+
 export const authRoutes = new Hono<AppEnv>()
   .post('/login', async (c) => {
-    if (!c.env.PASSWORD_HASH) {
-      throw jsonError(500, 'No password is set. Run "npm run set-password" first.');
-    }
     const db = c.get('db');
-    const ip = c.req.header('CF-Connecting-IP') ?? 'local';
-    const now = Date.now();
-
-    const row = await db.select().from(loginAttempts).where(eq(loginAttempts.ip, ip)).get();
-    const state: AttemptState | null = row
-      ? {
-          failedCount: row.failedCount,
-          lockedUntil: row.lockedUntil ? Date.parse(row.lockedUntil) : null,
-        }
-      : null;
-    const waitMs = lockRemaining(state, now);
-    if (waitMs > 0) {
-      throw jsonError(429, 'Too many attempts', { retryAfterSeconds: Math.ceil(waitMs / 1000) });
-    }
-
     const { password } = await readBody(c, loginSchema);
-    if (!(await verifyPassword(password, c.env.PASSWORD_HASH))) {
-      const next = afterFailedAttempt(state, now);
-      const values = {
-        failedCount: next.failedCount,
-        lockedUntil: next.lockedUntil ? new Date(next.lockedUntil).toISOString() : null,
-      };
-      await db
-        .insert(loginAttempts)
-        .values({ ip, firstFailedAt: new Date(now).toISOString(), ...values })
-        .onConflictDoUpdate({ target: loginAttempts.ip, set: values });
-      if (next.lockedUntil) {
-        throw jsonError(429, 'Too many attempts', {
-          retryAfterSeconds: Math.ceil((next.lockedUntil - now) / 1000),
-        });
+    const check = await checkPassword(db, c.env, clientIp(c.req.raw), password);
+    if (!check.ok) {
+      if (check.reason === 'not_set') {
+        throw jsonError(500, 'No password is set. Run "npm run set-password" first.');
+      }
+      if (check.reason === 'locked') {
+        throw jsonError(429, 'Too many attempts', { retryAfterSeconds: check.retryAfterSeconds });
       }
       throw jsonError(401, 'Wrong password');
     }
 
     const token = randomToken();
+    const now = Date.now();
     const nowIso = new Date(now).toISOString();
     await db.batch([
-      db.delete(loginAttempts).where(eq(loginAttempts.ip, ip)),
       db.delete(sessions).where(lt(sessions.expiresAt, nowIso)),
       db.insert(sessions).values({
         id: crypto.randomUUID(),
