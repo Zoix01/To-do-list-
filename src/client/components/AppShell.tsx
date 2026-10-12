@@ -13,6 +13,7 @@ import {
   Repeat,
 } from 'lucide-react';
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { ApiError } from '../lib/api';
 import { useApp } from '../lib/appContext';
 import { useFeedback } from '../lib/feedback';
 import { useMediaQuery } from '../lib/hooks';
@@ -157,6 +158,12 @@ function TabBar() {
 function StatusLine() {
   const { canEdit } = useApp();
   const { error, clearError } = useFeedback();
+  const openTasks = useOpenTasks();
+  // A failed load shouldn't look like an empty list (401s go to the login screen instead).
+  const loadFailed =
+    openTasks.isError &&
+    !(openTasks.error instanceof ApiError && openTasks.error.status === 401) &&
+    openTasks.fetchStatus === 'idle';
   if (!canEdit) {
     return (
       <p className="status-line">
@@ -171,6 +178,16 @@ function StatusLine() {
         {error}
         <button type="button" className="icon-button" aria-label="Dismiss" onClick={clearError}>
           <X size={14} aria-hidden="true" />
+        </button>
+      </p>
+    );
+  }
+  if (loadFailed) {
+    return (
+      <p className="status-line status-line--error" role="alert">
+        Couldn’t load your tasks.
+        <button type="button" className="link-button" onClick={() => void openTasks.refetch()}>
+          Try again
         </button>
       </p>
     );

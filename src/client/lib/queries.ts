@@ -9,7 +9,15 @@ import type {
   TaskCreateInput,
   TaskUpdateInput,
 } from '../../shared/schemas';
-import type { HabitWithChecks, List, Me, Priority, RecurringTask, Task } from '../../shared/types';
+import type {
+  ConnectorStatus,
+  HabitWithChecks,
+  List,
+  Me,
+  Priority,
+  RecurringTask,
+  Task,
+} from '../../shared/types';
 import { api, errorMessage } from './api';
 import { useFeedback } from './feedback';
 
@@ -21,7 +29,23 @@ export const keys = {
   completedTasks: ['tasks', 'completed'] as const,
   recurring: ['recurring'] as const,
   habits: ['habits'] as const,
+  connector: ['connector'] as const,
 };
+
+export function useConnector() {
+  return useQuery({ queryKey: keys.connector, queryFn: () => api<ConnectorStatus>('/connector') });
+}
+
+/** Disconnects a connected app (revokes its access immediately). */
+export function useDisconnectApp() {
+  const queryClient = useQueryClient();
+  const { showError } = useFeedback();
+  return useMutation({
+    mutationFn: (id: string) => api(`/connector/apps/${id}`, { method: 'DELETE' }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: keys.connector }),
+    onError: (error) => showError(errorMessage(error)),
+  });
+}
 
 export function useRecurring() {
   return useQuery({ queryKey: keys.recurring, queryFn: () => api<RecurringTask[]>('/recurring') });
