@@ -103,6 +103,13 @@ export interface HabitWithChecks extends Habit {
   checks: ISODate[];
 }
 
+/** Settings → Claude connector (SPEC §9.1). */
+export interface ConnectorStatus {
+  /** False until the OAUTH_KV namespace is set up. */
+  configured: boolean;
+  apps: { id: string; name: string; connectedAt: Timestamp }[];
+}
+
 export interface Me {
   timeZone: string;
 }
