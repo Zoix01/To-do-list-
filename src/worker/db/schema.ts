@@ -15,6 +15,7 @@ import type {
   ListColor,
   Priority,
   RecurringMode,
+  RecurringPeriod,
   Weekday,
 } from '../../shared/types';
 
@@ -38,7 +39,10 @@ export const tasks = sqliteTable(
     plannedDate: text('planned_date'),
     plannedManual: integer('planned_manual', { mode: 'boolean' }).notNull().default(false),
     recurringId: text('recurring_id'),
+    /** Start of a recurring instance's period (Monday, or the 1st for monthly). */
     weekStart: text('week_start'),
+    /** Tells instances of one period apart (SPEC §6.1). */
+    occurrence: integer('occurrence').notNull().default(0),
     completedAt: text('completed_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
@@ -46,8 +50,12 @@ export const tasks = sqliteTable(
   (table) => [
     index('tasks_completed_at_idx').on(table.completedAt),
     index('tasks_list_id_idx').on(table.listId),
-    // One instance per weekly template per week (SPEC §6).
-    uniqueIndex('tasks_recurring_week_idx').on(table.recurringId, table.weekStart),
+    // One instance per template, period and occurrence (SPEC §6.1).
+    uniqueIndex('tasks_recurring_period_idx').on(
+      table.recurringId,
+      table.weekStart,
+      table.occurrence,
+    ),
   ],
 );
 
@@ -57,8 +65,11 @@ export const recurringTasks = sqliteTable('recurring_tasks', {
   title: text('title').notNull(),
   notes: text('notes'),
   priority: text('priority').$type<Priority>().notNull().default('medium'),
+  period: text('period').$type<RecurringPeriod>().notNull().default('week'),
   mode: text('mode').$type<RecurringMode>().notNull(),
   weekday: integer('weekday').$type<Weekday>(),
+  monthDays: text('month_days', { mode: 'json' }).$type<number[]>().notNull().default([]),
+  timesPerMonth: integer('times_per_month'),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   activeFrom: text('active_from').notNull(),
   generatedThrough: text('generated_through'),

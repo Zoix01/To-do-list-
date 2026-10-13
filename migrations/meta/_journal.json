@@ -29,6 +29,13 @@
       "when": 1791877648909,
       "tag": "0003_gamification",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791895728787,
+      "tag": "0004_monthly_recurring",
+      "breakpoints": true
     }
   ]
 }

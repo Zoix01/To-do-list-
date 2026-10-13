@@ -6,8 +6,8 @@ import { recurringTasks, tasks } from './db/schema';
 import type { Db } from './env';
 
 /**
- * Creates the weekly instances that are due now (SPEC §6): the current week for
- * every active template, plus next week when `includeNextWeek` (after completing
+ * Creates the recurring instances that are due now (SPEC §6): the current week
+ * or month for every active template, plus next week when `includeNextWeek` (after completing
  * an instance). Safe to call on every load: each week is generated once
  * (generatedThrough), and the unique (recurringId, weekStart) index stops
  * duplicates even if two requests race.
@@ -44,6 +44,7 @@ export async function ensureWeeklyInstances(
             plannedManual: false,
             recurringId: template.id,
             weekStart: instance.weekStart,
+            occurrence: instance.occurrence,
             completedAt: null,
             createdAt: now,
             updatedAt: now,

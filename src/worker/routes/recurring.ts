@@ -1,5 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
+import { normalizeSchedule } from '../../shared/recurrence';
 import { recurringCreateSchema, recurringUpdateSchema } from '../../shared/schemas';
 import { WEIGHT_DEFAULT } from '../../shared/economy';
 import type { RecurringTask } from '../../shared/types';
@@ -9,7 +10,7 @@ import { assertListExists, emptyToNull } from '../helpers';
 import { badRequest, notFound, readBody } from '../http';
 import { ensureWeeklyInstances } from '../weekly';
 
-/** Weekly task templates (SPEC §6, §8.5). */
+/** Recurring (weekly and monthly) task templates (SPEC §6, §8.5). */
 export const recurringRoutes = new Hono<AppEnv>()
   .get('/', async (c) => {
     return c.json(
@@ -18,7 +19,8 @@ export const recurringRoutes = new Hono<AppEnv>()
   })
   .post('/', async (c) => {
     const input = await readBody(c, recurringCreateSchema);
-    if (input.mode === 'fixed' && !input.weekday) throw badRequest('Choose a weekday');
+    const normalized = normalizeSchedule(input);
+    if (!normalized.ok) throw badRequest(normalized.error);
     const db = c.get('db');
     await assertListExists(db, input.listId);
     const template: RecurringTask = {
@@ -27,8 +29,7 @@ export const recurringRoutes = new Hono<AppEnv>()
       title: input.title,
       notes: emptyToNull(input.notes),
       priority: input.priority ?? 'medium',
-      mode: input.mode,
-      weekday: input.mode === 'fixed' ? (input.weekday ?? null) : null,
+      ...normalized.schedule,
       active: true,
       activeFrom: c.get('today'),
       generatedThrough: null,
@@ -51,12 +52,18 @@ export const recurringRoutes = new Hono<AppEnv>()
       .from(recurringTasks)
       .where(eq(recurringTasks.id, c.req.param('id')))
       .get();
-    if (!existing) throw notFound('Weekly task not found');
+    if (!existing) throw notFound('Recurring task not found');
     if (input.listId !== undefined) await assertListExists(db, input.listId);
 
-    const mode = input.mode ?? existing.mode;
-    const weekday = mode === 'fixed' ? (input.weekday ?? existing.weekday) : null;
-    if (mode === 'fixed' && !weekday) throw badRequest('Choose a weekday');
+    const normalized = normalizeSchedule({
+      period: input.period ?? existing.period,
+      mode: input.mode ?? existing.mode,
+      weekday: input.weekday !== undefined ? input.weekday : existing.weekday,
+      monthDays: input.monthDays ?? existing.monthDays,
+      timesPerMonth:
+        input.timesPerMonth !== undefined ? input.timesPerMonth : existing.timesPerMonth,
+    });
+    if (!normalized.ok) throw badRequest(normalized.error);
     const resumed = input.active === true && !existing.active;
 
     const [template] = await db
@@ -64,8 +71,7 @@ export const recurringRoutes = new Hono<AppEnv>()
       .set({
         ...input,
         ...(input.notes !== undefined && { notes: emptyToNull(input.notes) }),
-        mode,
-        weekday,
+        ...normalized.schedule,
         // Resuming counts as a new start, so a passed weekday waits until next week.
         ...(resumed && { activeFrom: c.get('today') }),
       })
@@ -81,6 +87,6 @@ export const recurringRoutes = new Hono<AppEnv>()
       .delete(recurringTasks)
       .where(eq(recurringTasks.id, c.req.param('id')))
       .returning({ id: recurringTasks.id });
-    if (!template) throw notFound('Weekly task not found');
+    if (!template) throw notFound('Recurring task not found');
     return c.body(null, 204);
   });

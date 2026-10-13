@@ -9,6 +9,7 @@ import {
   levelInfo,
   rewardEntries,
   snapshotItems,
+  templateRules,
   snapshotValues,
   targetPeriodStart,
   tickPay,
@@ -95,7 +96,11 @@ async function ensureSnapshot(ctx: RewardsContext, weekStart: ISODate): Promise<
   const createdOn = (createdAt: string) => dateInZone(new Date(createdAt), timeZone);
   const items = snapshotItems(
     habitRows.map((habit) => ({ ...habit, createdOn: createdOn(habit.createdAt), rules: habit })),
-    templateRows.map((template) => ({ ...template, createdOn: createdOn(template.createdAt) })),
+    templateRows.map((template) => ({
+      ...template,
+      createdOn: createdOn(template.createdAt),
+      rules: templateRules(template),
+    })),
     weekStart,
   );
   const budget = await weeklyBudget(db);
@@ -291,7 +296,9 @@ export async function payTick(
 
 /** Pays a just-completed weekly-task instance. */
 export async function payWeekly(ctx: RewardsContext, task: Task): Promise<EarnedReward> {
-  if (ctx.today < ctx.start || !task.recurringId || !task.weekStart) return NOTHING;
+  if (ctx.today < ctx.start || !task.recurringId) return NOTHING;
+  // A recurring task pays the value of the week its deadline falls in (SPEC §6.1).
+  const week = mondayOf(task.deadline);
   const key = `weekly:${task.id}`;
   const [done] = await ctx.db
     .select({ n: count() })
@@ -299,15 +306,15 @@ export async function payWeekly(ctx: RewardsContext, task: Task): Promise<Earned
     .where(and(eq(tasks.recurringId, task.recurringId), isNotNull(tasks.completedAt)));
   const reward = weeklyReward({
     templateId: task.recurringId,
-    weekStart: task.weekStart,
-    value: await valueOf(ctx, 'weekly', task.recurringId, task.weekStart),
+    weekStart: week,
+    value: await valueOf(ctx, 'weekly', task.recurringId, week),
     completedBefore: Math.max(0, (done?.n ?? 1) - 1),
     alreadyPaid: await ledgerHas(ctx.db, key),
     today: ctx.today,
     start: ctx.start,
   });
   const entries = rewardEntries(
-    { key, kind: 'weekly', itemId: task.recurringId, date: task.weekStart },
+    { key, kind: 'weekly', itemId: task.recurringId, date: week },
     reward,
     ctx.today,
   );
@@ -355,12 +362,12 @@ async function catchUp(ctx: RewardsContext): Promise<void> {
       checks: checkRows.filter((check) => check.habitId === habit.id).map((check) => check.date),
     })),
     weekly: doneRows.flatMap((task) =>
-      task.recurringId && task.weekStart && task.completedAt
+      task.recurringId && task.completedAt
         ? [
             {
               taskId: task.id,
               templateId: task.recurringId,
-              weekStart: task.weekStart,
+              weekStart: mondayOf(task.deadline),
               completedOn: dateInZone(new Date(task.completedAt), timeZone),
             },
           ]

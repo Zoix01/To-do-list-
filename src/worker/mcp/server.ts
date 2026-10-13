@@ -31,7 +31,7 @@ const CONCEPTS = `How this planner works:
 - Every task has a DEADLINE (the day it must be done by, always set) and an optional PLANNED DATE (the day the user intends to work on it). New tasks are unplanned unless a planned date is given. A planned date after the deadline is allowed but unusual (plannedAfterDeadline: true).
 - flag: "overdue" = the deadline has passed (red, most urgent); "missed_plan" = the planned date has passed but not the deadline (orange); null = on track. Overdue tasks are never moved automatically.
 - priority: "high" (2), "medium" (1), "low" (0) — the app shows the number.
-- weekly: true = created by a weekly template (one task per week).
+- weekly: true = created by a recurring template (weekly, or one or more tasks per month).
 - Dates are YYYY-MM-DD in the user's time zone; every result includes "today".
 - Task titles and list names are usually in Czech.`;
 

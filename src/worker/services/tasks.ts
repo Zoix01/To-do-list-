@@ -41,6 +41,7 @@ export async function createTask(db: Db, today: ISODate, input: TaskCreateInput)
     ...newTaskPlanning(input.deadline, input.plannedDate),
     recurringId: null,
     weekStart: null,
+    occurrence: 0,
     completedAt: null,
     createdAt: now,
     updatedAt: now,
