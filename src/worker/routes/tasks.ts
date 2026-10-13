@@ -4,7 +4,9 @@ import { taskCreateSchema, taskIdsSchema, taskUpdateSchema } from '../../shared/
 import { tasks } from '../db/schema';
 import type { AppEnv } from '../env';
 import { notFound, readBody } from '../http';
+import { payWeekly } from '../services/rewards';
 import { createTask, loadOpenTasks, updateTask } from '../services/tasks';
+import { rewardsContext } from './rewards';
 import { ensureWeeklyInstances } from '../weekly';
 
 export const taskRoutes = new Hono<AppEnv>()
@@ -60,6 +62,8 @@ export const taskRoutes = new Hono<AppEnv>()
         templateIds: [task.recurringId],
         includeNextWeek: true,
       });
+      // Weekly tasks earn coins (SPEC §13.4); the reward rides along for the toast.
+      return c.json({ ...task, reward: await payWeekly(rewardsContext(c), task) });
     }
     return c.json(task);
   })

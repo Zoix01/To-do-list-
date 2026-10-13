@@ -3,10 +3,13 @@ import { Hono } from 'hono';
 import { isISODate } from '../../shared/dates';
 import { normalizeHabitRules } from '../../shared/habits';
 import { habitCreateSchema, habitUpdateSchema } from '../../shared/schemas';
-import type { Habit, HabitWithChecks } from '../../shared/types';
+import { WEIGHT_DEFAULT } from '../../shared/economy';
+import type { EarnedReward, Habit, HabitWithChecks } from '../../shared/types';
 import { habitChecks, habits } from '../db/schema';
 import type { AppEnv, Db } from '../env';
 import { badRequest, notFound, readBody } from '../http';
+import { payTick } from '../services/rewards';
+import { rewardsContext } from './rewards';
 
 async function findHabit(db: Db, id: string): Promise<Habit> {
   const habit = await db.select().from(habits).where(eq(habits.id, id)).get();
@@ -43,6 +46,7 @@ export const habitRoutes = new Hono<AppEnv>()
       icon: null,
       ...normalized.rules,
       archived: false,
+      weight: input.weight ?? WEIGHT_DEFAULT,
       createdAt: new Date().toISOString(),
     };
     await c.get('db').insert(habits).values(habit);
@@ -74,15 +78,20 @@ export const habitRoutes = new Hono<AppEnv>()
     ]);
     return c.body(null, 204);
   })
-  // Tick a day (idempotent). Future days can't be ticked.
+  // Tick a day (idempotent). Future days can't be ticked. Returns what the tick earned (SPEC §13.4).
   .put('/:id/checks/:date', async (c) => {
     const date = c.req.param('date');
     if (!isISODate(date)) throw badRequest('Invalid date');
     if (date > c.get('today')) throw badRequest('Future days can’t be ticked');
     const db = c.get('db');
     const habit = await findHabit(db, c.req.param('id'));
+    const before = await db
+      .select({ date: habitChecks.date })
+      .from(habitChecks)
+      .where(eq(habitChecks.habitId, habit.id));
     await db.insert(habitChecks).values({ habitId: habit.id, date }).onConflictDoNothing();
-    return c.body(null, 204);
+    const checksBefore = new Set(before.map((check) => check.date));
+    return c.json<EarnedReward>(await payTick(rewardsContext(c), habit, checksBefore, date));
   })
   // Un-tick a day (idempotent).
   .delete('/:id/checks/:date', async (c) => {

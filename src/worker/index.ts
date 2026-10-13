@@ -14,7 +14,9 @@ import { connectorRoutes } from './routes/connector';
 import { habitRoutes } from './routes/habits';
 import { listRoutes } from './routes/lists';
 import { recurringRoutes } from './routes/recurring';
+import { rewardRoutes, rewardsContext } from './routes/rewards';
 import { taskRoutes } from './routes/tasks';
+import { prepareRewards } from './services/rewards';
 
 // ---------------------------------------------------------------- The app's API (/api)
 
@@ -26,12 +28,18 @@ api.use(async (c, next) => {
 });
 api.route('/auth', authRoutes);
 api.use(requireSession);
+// This week's reward snapshot is locked before any request can change habits or weights.
+api.use(async (c, next) => {
+  await prepareRewards(rewardsContext(c));
+  await next();
+});
 api.get('/me', (c) => c.json<Me>({ timeZone: c.env.TIMEZONE }));
 api.route('/lists', listRoutes);
 api.route('/tasks', taskRoutes);
 api.route('/recurring', recurringRoutes);
 api.route('/habits', habitRoutes);
 api.route('/connector', connectorRoutes);
+api.route('/rewards', rewardRoutes);
 
 // ---------------------------------------------------------------- Everything the Worker serves itself
 

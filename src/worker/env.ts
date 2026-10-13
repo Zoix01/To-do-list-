@@ -8,6 +8,8 @@ export interface Env {
   PASSWORD_HASH?: string;
   /** IANA time zone, e.g. "Europe/Prague" (wrangler.jsonc vars). */
   TIMEZONE: string;
+  /** Overrides GAMIFICATION_START (YYYY-MM-DD), for trying rewards out locally in .dev.vars. */
+  REWARDS_START?: string;
   /** Claude connector grants and tokens (SPEC §9.1). Optional: without it the connector is off. */
   OAUTH_KV?: KVNamespace;
   /** Added by the OAuth provider for requests it passes on to the app. */

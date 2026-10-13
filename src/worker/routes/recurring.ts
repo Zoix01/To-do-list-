@@ -1,6 +1,7 @@
 import { asc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { recurringCreateSchema, recurringUpdateSchema } from '../../shared/schemas';
+import { WEIGHT_DEFAULT } from '../../shared/economy';
 import type { RecurringTask } from '../../shared/types';
 import { recurringTasks } from '../db/schema';
 import type { AppEnv } from '../env';
@@ -31,6 +32,7 @@ export const recurringRoutes = new Hono<AppEnv>()
       active: true,
       activeFrom: c.get('today'),
       generatedThrough: null,
+      weight: input.weight ?? WEIGHT_DEFAULT,
       createdAt: new Date().toISOString(),
     };
     await db.insert(recurringTasks).values(template);
