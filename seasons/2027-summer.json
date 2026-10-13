@@ -1,0 +1,69 @@
+{
+  "id": "2027-summer",
+  "name": "Summer 2027",
+  "theme": "summer",
+  "start": "2027-06-01",
+  "end": "2027-08-31",
+  "artworks": [
+    {
+      "id": "parasol",
+      "title": "Woman with a Parasol – Madame Monet and Her Son",
+      "artist": "Claude Monet",
+      "year": "1875",
+      "image": "/art/2027-summer/parasol.webp",
+      "width": 1291,
+      "height": 1600,
+      "cols": 2,
+      "rows": 3,
+      "legendary": 1,
+      "rare": 3,
+      "source": "https://commons.wikimedia.org/wiki/File:Claude_Monet,_Woman_with_a_Parasol_-_Madame_Monet_and_Her_Son,_1875,_NGA_61379.jpg",
+      "license": "CC0"
+    },
+    {
+      "id": "jatte",
+      "title": "A Sunday on La Grande Jatte",
+      "artist": "Georges Seurat",
+      "year": "1884–1886",
+      "image": "/art/2027-summer/jatte.webp",
+      "width": 1600,
+      "height": 1075,
+      "cols": 3,
+      "rows": 2,
+      "legendary": 2,
+      "rare": 4,
+      "source": "https://commons.wikimedia.org/wiki/File:Georges_Seurat_-_Un_dimanche_apr%C3%A8s-midi_%C3%A0_l%27%C3%AEle_de_la_Grande_Jatte.jpg",
+      "license": "Public domain"
+    },
+    {
+      "id": "wave",
+      "title": "The Great Wave off Kanagawa",
+      "artist": "Katsushika Hokusai",
+      "year": "c. 1831",
+      "image": "/art/2027-summer/wave.webp",
+      "width": 1600,
+      "height": 1076,
+      "cols": 3,
+      "rows": 2,
+      "legendary": 1,
+      "rare": 4,
+      "source": "https://commons.wikimedia.org/wiki/File:Tsunami_by_hokusai_19th_century.jpg",
+      "license": "Public domain"
+    },
+    {
+      "id": "mucha-summer",
+      "title": "Summer, from The Seasons",
+      "artist": "Alphonse Mucha",
+      "year": "1896",
+      "image": "/art/2027-summer/mucha-summer.webp",
+      "width": 833,
+      "height": 1600,
+      "cols": 2,
+      "rows": 3,
+      "legendary": 1,
+      "rare": 3,
+      "source": "https://commons.wikimedia.org/wiki/File:Alfons_Mucha_-_The_Seasons_-_Summer_(1896).jpg",
+      "license": "Public domain"
+    }
+  ]
+}

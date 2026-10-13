@@ -1,0 +1,69 @@
+{
+  "id": "2026-27-winter",
+  "name": "Winter 2026/27",
+  "theme": "winter",
+  "start": "2026-10-19",
+  "end": "2027-02-28",
+  "artworks": [
+    {
+      "id": "hunters",
+      "title": "The Hunters in the Snow (Winter)",
+      "artist": "Pieter Bruegel the Elder",
+      "year": "1565",
+      "image": "/art/2026-27-winter/hunters.webp",
+      "width": 1600,
+      "height": 1138,
+      "cols": 3,
+      "rows": 2,
+      "legendary": 3,
+      "rare": 5,
+      "source": "https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg",
+      "license": "Public domain"
+    },
+    {
+      "id": "magpie",
+      "title": "The Magpie",
+      "artist": "Claude Monet",
+      "year": "1868–1869",
+      "image": "/art/2026-27-winter/magpie.webp",
+      "width": 1600,
+      "height": 1085,
+      "cols": 3,
+      "rows": 2,
+      "legendary": 0,
+      "rare": 2,
+      "source": "https://commons.wikimedia.org/wiki/File:Claude_Monet_-_The_Magpie_-_Google_Art_Project.jpg",
+      "license": "Public domain"
+    },
+    {
+      "id": "kambara",
+      "title": "Evening Snow at Kambara",
+      "artist": "Utagawa Hiroshige",
+      "year": "c. 1833–1834",
+      "image": "/art/2026-27-winter/kambara.webp",
+      "width": 1600,
+      "height": 1052,
+      "cols": 3,
+      "rows": 2,
+      "legendary": 4,
+      "rare": 5,
+      "source": "https://commons.wikimedia.org/wiki/File:Ando_Hiroshige_-_Kambara-_Evening_Snow_-_1940.984_-_Cleveland_Museum_of_Art.jpg",
+      "license": "CC0"
+    },
+    {
+      "id": "mucha-winter",
+      "title": "Winter, from The Seasons",
+      "artist": "Alphonse Mucha",
+      "year": "1896",
+      "image": "/art/2026-27-winter/mucha-winter.webp",
+      "width": 850,
+      "height": 1600,
+      "cols": 2,
+      "rows": 3,
+      "legendary": 1,
+      "rare": 3,
+      "source": "https://commons.wikimedia.org/wiki/File:Alfons_Mucha_-_The_Seasons_-_Winter_(1896).jpg",
+      "license": "Public domain"
+    }
+  ]
+}
