@@ -20,6 +20,13 @@ import * as schema from '../db/schema';
 import { lists, tasks } from '../db/schema';
 import type { Db, Env } from '../env';
 import { loadHabits } from '../services/habits';
+import {
+  prepareRewards,
+  rewardsStart,
+  rewardsSummary,
+  type RewardsContext,
+} from '../services/rewards';
+import { rewardsReport } from '../services/rewardsReport';
 import { createTask, loadOpenTasks, updateTask } from '../services/tasks';
 
 /*
@@ -37,7 +44,7 @@ const CONCEPTS = `How this planner works:
 - Task titles and list names are usually in Czech.`;
 
 const INSTRUCTIONS = `${CONCEPTS}
-You can read tasks, lists and habits, create tasks and edit them. You cannot complete or delete tasks, and you cannot tick habits — ask the user to do that in the app.
+You can read tasks, lists, habits and the rewards game (get_rewards), create tasks and edit them. You cannot complete or delete tasks, and you cannot tick habits — ask the user to do that in the app.
 Deadlines and planned dates can't be set in the past.`;
 
 const date = z
@@ -75,7 +82,8 @@ async function loadLists(db: Db): Promise<List[]> {
   return db.select().from(lists).orderBy(asc(lists.sortOrder));
 }
 
-function buildServer(db: Db, today: string, timeZone: string): McpServer {
+function buildServer(db: Db, today: string, timeZone: string, start: string): McpServer {
+  const rewards: RewardsContext = { db, today, timeZone, start };
   const server = new McpServer(
     { name: 'planner', title: 'Planner', version: '1.0.0' },
     { instructions: INSTRUCTIONS },
@@ -218,16 +226,46 @@ ${CONCEPTS}`,
     'list_habits',
     {
       title: 'List habits',
-      description: `The user’s habits with their frequency, current and best streak, whether they are due or done today, and weekly / monthly progress. Streaks count scheduled days (daily / set days), weeks (X× per week) or months (X× per month); a period that isn't finished yet doesn't break a streak. Archived habits are included with archived: true. Habits can't be ticked through this connector.`,
+      description: `The user’s habits with their frequency, current and best streak, whether they are due or done today, weekly / monthly progress, and rewards: weight (1–10, its share of the weekly coin budget), valuePerTick (coins per tick this week, before the streak bonus), nextTick (what a tick today would pay, with its streak multiplier) and earnsFromMonday (created this week, earns from the next week). Streaks count scheduled days (daily / set days), weeks (X× per week) or months (X× per month); a period that isn't finished yet doesn't break a streak. Archived habits are included with archived: true. Habits can't be ticked through this connector.`,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     () =>
       run(async () => {
         const { habits: allHabits, vacation } = await loadHabits(db, today);
+        await prepareRewards(rewards);
+        const summary = await rewardsSummary(rewards);
         return json({
           today,
-          habits: allHabits.map((habit) => assistantHabit(habit, today, vacation)),
+          habits: allHabits.map((habit) => {
+            const info = summary.habits[habit.id];
+            return {
+              ...assistantHabit(habit, today, vacation),
+              weight: habit.weight,
+              valuePerTick: info?.value ?? null,
+              nextTick: info?.nextTick ?? null,
+              earnsFromMonday: summary.started && !habit.archived && !info?.inSnapshot,
+            };
+          }),
         });
+      }),
+  );
+
+  server.registerTool(
+    'get_rewards',
+    {
+      title: 'Get rewards',
+      description: `The habit rewards game (read-only): level and XP, coins and shards, this week's coin earnings against the weekly budget, progress of the current season's art collection (artworks are named only once complete — keep the rest a surprise), inventory counts (mystery boxes, streak freezes, vacation days, lucky charms, bought real-life rewards), and the events between "from" and "to" (habit ticks summed per day, recurring tasks, milestones, level-ups, purchases, opened boxes, items used). At most 92 days. Coins come from habit ticks and recurring tasks; one-off tasks earn nothing. You can't buy, open, use or tick anything.`,
+      inputSchema: {
+        from: date.describe('First day of the event range (YYYY-MM-DD)'),
+        to: date.describe('Last day of the event range (YYYY-MM-DD), at most 92 days after "from"'),
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    ({ from, to }) =>
+      run(async () => {
+        const error = overviewRangeError(from, to);
+        if (error) return failure(error);
+        return json(await rewardsReport(rewards, from, to));
       }),
   );
 
@@ -316,7 +354,7 @@ export const mcpHandler = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const db = drizzle(env.DB, { schema });
     const today = dateInZone(new Date(), env.TIMEZONE);
-    const server = buildServer(db, today, env.TIMEZONE);
+    const server = buildServer(db, today, env.TIMEZONE, rewardsStart(env));
     // Stateless: a fresh server and transport per request, JSON responses.
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
