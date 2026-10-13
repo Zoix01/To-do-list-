@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isISODate } from './dates';
-import { REWARD_PRICE_MAX, REWARD_PRICE_MIN, WEIGHT_MAX, WEIGHT_MIN } from './economy';
+import { IMPORTANCE_LEVELS, REWARD_PRICE_MAX, REWARD_PRICE_MIN } from './economy';
 import { REWARD_ICONS } from './shop';
 import { HABIT_ICON_NAMES, TICK_ANIMATIONS } from './cosmetics';
 import {
@@ -14,8 +14,15 @@ import {
 const isoDate = z.string().refine(isISODate, 'Must be a date in YYYY-MM-DD format');
 const title = z.string().trim().min(1, 'Title is required').max(500);
 const notes = z.string().max(20_000).nullable();
-/** Share of the weekly coin budget (SPEC §13.3). */
-const weight = z.number().int().min(WEIGHT_MIN).max(WEIGHT_MAX);
+/** Importance 1–4: the item's share of the weekly coin budget (SPEC §13.3). */
+const importance = z.union(
+  IMPORTANCE_LEVELS.map((level) => z.literal(level)) as [
+    z.ZodLiteral<1>,
+    z.ZodLiteral<2>,
+    z.ZodLiteral<3>,
+    z.ZodLiteral<4>,
+  ],
+);
 
 export const loginSchema = z.object({ password: z.string().min(1).max(1000) });
 
@@ -66,7 +73,7 @@ export const recurringCreateSchema = z.object({
   monthDays: monthDays.optional(),
   /** Monthly 'flexible'. */
   timesPerMonth: z.number().int().nullable().optional(),
-  weight: weight.optional(),
+  importance: importance.optional(),
 });
 export type RecurringCreateInput = z.infer<typeof recurringCreateSchema>;
 
@@ -82,7 +89,7 @@ export const recurringUpdateSchema = z
     monthDays,
     timesPerMonth: z.number().int().nullable(),
     active: z.boolean(),
-    weight,
+    importance,
   })
   .partial()
   .strict();
@@ -98,7 +105,7 @@ export const habitCreateSchema = z.object({
   frequency: z.enum(HABIT_FREQUENCIES),
   weekdays: z.array(weekday).max(7).optional(),
   target: z.number().int().nullable().optional(),
-  weight: weight.optional(),
+  importance: importance.optional(),
   icon: z.enum(HABIT_ICON_NAMES).nullable().optional(),
   tickAnimation: tickAnimation.nullable().optional(),
 });
@@ -112,7 +119,7 @@ export const habitUpdateSchema = z
     weekdays: z.array(weekday).max(7),
     target: z.number().int().nullable(),
     archived: z.boolean(),
-    weight,
+    importance,
     icon: z.enum(HABIT_ICON_NAMES).nullable(),
     tickAnimation: tickAnimation.nullable(),
   })

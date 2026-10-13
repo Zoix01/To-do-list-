@@ -123,7 +123,7 @@ async function ensureSnapshot(ctx: RewardsContext, weekStart: ISODate): Promise<
             weekStart,
             itemType: item.type,
             itemId: item.id,
-            weight: item.weight,
+            weight: item.importance,
             valuePerCompletion: values.get(itemKey(item.type, item.id))!,
           })),
         )

@@ -1,6 +1,9 @@
 import { addDays, mondayOf, startOfMonth } from './dates';
 import {
   BOXES_PER_LEVEL,
+  FREQUENCY_EXPONENT,
+  IMPORTANCE_WEIGHTS,
+  type Importance,
   COIN_ROUNDING,
   COUNT_MILESTONES,
   LEVEL_XP_BASE,
@@ -28,7 +31,7 @@ export type EconomyItemType = 'habit' | 'weekly';
 export interface EconomyItem {
   type: EconomyItemType;
   id: string;
-  weight: number;
+  importance: Importance;
   /** Habit rules (a monthly template counts as a per_month habit), or null for a weekly task. */
   rules: HabitRules | null;
 }
@@ -72,14 +75,14 @@ export function completionsPerWeek(rules: HabitRules | null): number {
 export function snapshotItems(
   habits: {
     id: string;
-    weight: number;
+    importance: Importance;
     archived: boolean;
     createdOn: ISODate;
     rules: HabitRules;
   }[],
   templates: {
     id: string;
-    weight: number;
+    importance: Importance;
     active: boolean;
     createdOn: ISODate;
     rules: HabitRules | null;
@@ -92,7 +95,7 @@ export function snapshotItems(
       .map((habit) => ({
         type: 'habit' as const,
         id: habit.id,
-        weight: habit.weight,
+        importance: habit.importance,
         rules: habit.rules,
       })),
     ...templates
@@ -100,7 +103,7 @@ export function snapshotItems(
       .map((template) => ({
         type: 'weekly' as const,
         id: template.id,
-        weight: template.weight,
+        importance: template.importance,
         rules: template.rules,
       })),
   ];
@@ -108,10 +111,12 @@ export function snapshotItems(
 
 /** Value per completion of each item, keyed by itemKey (13.3). */
 export function snapshotValues(items: EconomyItem[], budget: number): Map<string, number> {
-  const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+  const weightOf = (item: EconomyItem) =>
+    IMPORTANCE_WEIGHTS[item.importance] * completionsPerWeek(item.rules) ** FREQUENCY_EXPONENT;
+  const totalWeight = items.reduce((sum, item) => sum + weightOf(item), 0);
   const values = new Map<string, number>();
   for (const item of items) {
-    const share = (budget * item.weight) / totalWeight;
+    const share = (budget * weightOf(item)) / totalWeight;
     values.set(
       itemKey(item.type, item.id),
       roundTo(share / completionsPerWeek(item.rules), COIN_ROUNDING),

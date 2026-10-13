@@ -6,6 +6,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
+import type { Importance } from '../../shared/economy';
 import type { EconomyItemType, LedgerKind } from '../../shared/rewards';
 import type { BoxResult } from '../../shared/boxes';
 import type { Tier } from '../../shared/seasons';
@@ -76,8 +77,14 @@ export const recurringTasks = sqliteTable('recurring_tasks', {
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   activeFrom: text('active_from').notNull(),
   generatedThrough: text('generated_through'),
-  /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
-  weight: integer('weight').notNull().default(5),
+  /**
+   * Importance 1–4 (SPEC §13.3), stored in the former weight column. Its default
+   * is never used: the app always sets it (migration 0009 mapped old weights).
+   */
+  importance: integer('weight')
+    .$type<Importance>()
+    .notNull()
+    .default(5 as Importance),
   createdAt: text('created_at').notNull(),
 });
 
@@ -90,8 +97,14 @@ export const habits = sqliteTable('habits', {
   weekdays: text('weekdays', { mode: 'json' }).$type<Weekday[]>().notNull().default([]),
   target: integer('target'),
   archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
-  /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
-  weight: integer('weight').notNull().default(5),
+  /**
+   * Importance 1–4 (SPEC §13.3), stored in the former weight column. Its default
+   * is never used: the app always sets it (migration 0009 mapped old weights).
+   */
+  importance: integer('weight')
+    .$type<Importance>()
+    .notNull()
+    .default(5 as Importance),
   /** Its own tick animation; null = the one chosen in Settings (SPEC §13.12). */
   tickAnimation: text('tick_animation'),
   createdAt: text('created_at').notNull(),
@@ -145,6 +158,7 @@ export const weekSnapshotItems = sqliteTable(
     weekStart: text('week_start').notNull(),
     itemType: text('item_type').$type<EconomyItemType>().notNull(),
     itemId: text('item_id').notNull(),
+    /** The item's importance at snapshot time. */
     weight: integer('weight').notNull(),
     valuePerCompletion: integer('value_per_completion').notNull(),
   },

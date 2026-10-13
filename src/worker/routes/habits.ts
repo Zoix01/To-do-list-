@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { isISODate } from '../../shared/dates';
 import { normalizeHabitRules } from '../../shared/habits';
 import { habitCreateSchema, habitUpdateSchema } from '../../shared/schemas';
-import { WEIGHT_DEFAULT } from '../../shared/economy';
+import { IMPORTANCE_DEFAULT } from '../../shared/economy';
 import type { EarnedReward, Habit, HabitWithChecks } from '../../shared/types';
 import { habitChecks, habits } from '../db/schema';
 import type { AppEnv, Db } from '../env';
@@ -41,7 +41,7 @@ export const habitRoutes = new Hono<AppEnv>()
       tickAnimation: input.tickAnimation ?? null,
       ...normalized.rules,
       archived: false,
-      weight: input.weight ?? WEIGHT_DEFAULT,
+      importance: input.importance ?? IMPORTANCE_DEFAULT,
       createdAt: new Date().toISOString(),
     };
     await c.get('db').insert(habits).values(habit);

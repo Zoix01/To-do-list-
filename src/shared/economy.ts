@@ -8,7 +8,7 @@ import type { HabitFrequency, ISODate } from './types';
 /** Coins for a perfect week, before streak bonuses (13.2). Editable in Settings. */
 export const WEEKLY_BUDGET = 10000;
 /** Realistic share of a perfect week; shop prices are based on it (13.2). Editable in Settings. */
-export const EXPECTED_RATE = 0.7;
+export const EXPECTED_RATE = 0.75;
 /** Shop prices are rounded to this (13.6). */
 export const PRICE_ROUNDING = 50;
 /** Earned coins are rounded to this (13.3, 13.4). */
@@ -18,10 +18,29 @@ export const XP_PER_COIN = 0.1;
 /** Monday; nothing earns before it. First week snapshot and Season 1 start (13.2). */
 export const GAMIFICATION_START: ISODate = '2026-10-19';
 
-/** Weight of a habit or weekly task: its share of the weekly budget (13.3). */
-export const WEIGHT_MIN = 1;
-export const WEIGHT_MAX = 10;
-export const WEIGHT_DEFAULT = 5;
+/**
+ * Importance of a habit or recurring task, chosen in its form (13.3):
+ * 1 Light, 2 Normal, 3 Important, 4 Essential.
+ */
+export const IMPORTANCE_LEVELS = [1, 2, 3, 4] as const;
+export type Importance = (typeof IMPORTANCE_LEVELS)[number];
+export const IMPORTANCE_DEFAULT: Importance = 2;
+export const IMPORTANCE_NAMES: Record<Importance, string> = {
+  1: 'Light',
+  2: 'Normal',
+  3: 'Important',
+  4: 'Essential',
+};
+/** How much of the budget each level weighs (13.3). */
+export const IMPORTANCE_WEIGHTS: Record<Importance, number> = { 1: 1, 2: 2, 3: 3, 4: 4 };
+/**
+ * How often an item repeats also counts, damped (13.3): its share grows with
+ * completionsPerWeek ^ FREQUENCY_EXPONENT. With 0.75, over a 4-week month a
+ * daily item earns most in total (28 ticks), a weekly one less (4), a monthly
+ * one least (1); per completion it's the other way round: weekly ≈ 1.6× and
+ * monthly ≈ 2.3× a daily tick.
+ */
+export const FREQUENCY_EXPONENT = 0.75;
 
 /** Streak multiplier: +10% per full streak period, at most +50% (13.4). */
 export const STREAK_BONUS_PER_PERIOD = 0.1;
@@ -78,13 +97,18 @@ export const LEVEL_XP_STEP = 100;
 /** Mystery boxes per level-up (13.5). */
 export const BOXES_PER_LEVEL = 1;
 
-/** Mystery box price = TYPICAL_WEEK × BOX_PRICE_SHARE / BOXES_PER_TYPICAL_WEEK (13.6). */
-export const BOX_PRICE_SHARE = 0.35;
-export const BOXES_PER_TYPICAL_WEEK = 4;
+/**
+ * Mystery box price = TYPICAL_WEEK × BOX_PRICE_SHARE / BOXES_PER_TYPICAL_WEEK (13.6):
+ * spending half of a typical week buys 2.5 boxes. With the free milestone and
+ * level-up boxes, that finishes a season's collection in about 9–12 of its 13
+ * weeks (see the balance simulation).
+ */
+export const BOX_PRICE_SHARE = 0.5;
+export const BOXES_PER_TYPICAL_WEEK = 2.5;
 /** Other prices as a multiple of the box price (13.6). */
 export const FREEZE_PRICE_IN_BOXES = 1;
 export const VACATION_PRICE_IN_BOXES = 0.5;
-export const COSMETIC_PRICE_IN_BOXES = 3;
+export const COSMETIC_PRICE_IN_BOXES = 1.2;
 /** A purchase can be undone this long after buying (the toast shows for 5 s; 13.18). */
 export const REFUND_WINDOW_SECONDS = 30;
 /** Price range of a real-life reward (13.6). */

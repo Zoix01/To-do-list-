@@ -1,6 +1,6 @@
 import { Minus, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { WEIGHT_DEFAULT, WEEKLY_BUDGET } from '../../../shared/economy';
+import { IMPORTANCE_DEFAULT, WEEKLY_BUDGET, type Importance } from '../../../shared/economy';
 import { MAX_TIMES_PER_MONTH, normalizeSchedule } from '../../../shared/recurrence';
 import { templateRules } from '../../../shared/rewards';
 import type { RecurringUpdateInput } from '../../../shared/schemas';
@@ -19,7 +19,7 @@ import {
   Segmented,
   WeekdayPicker,
 } from '../../components/pickers';
-import { WeightField } from '../../components/WeightField';
+import { ImportanceField } from '../../components/ImportanceField';
 import { errorMessage } from '../../lib/api';
 import { useApp } from '../../lib/appContext';
 import { useHabits, useRecurring, useRecurringMutations, useRewards } from '../../lib/queries';
@@ -58,7 +58,9 @@ export function RecurringForm({
   const [times, setTimes] = useState<number>(template?.timesPerMonth ?? 2);
   const [priority, setPriority] = useState<Priority>(template?.priority ?? 'medium');
   const [listId, setListId] = useState<string | null>(template?.listId ?? null);
-  const [weight, setWeight] = useState<number>(template?.weight ?? WEIGHT_DEFAULT);
+  const [importance, setImportance] = useState<Importance>(
+    template?.importance ?? IMPORTANCE_DEFAULT,
+  );
   const { data: habits } = useHabits();
   const { data: templates } = useRecurring();
   const { data: rewards } = useRewards();
@@ -74,7 +76,7 @@ export function RecurringForm({
             {
               type: 'weekly',
               id: template?.id ?? 'new',
-              weight,
+              importance,
               rules: schedule.ok ? templateRules(schedule.schedule) : null,
             },
             habits,
@@ -95,7 +97,7 @@ export function RecurringForm({
       ...schedule.schedule,
       priority,
       listId,
-      weight,
+      importance,
     };
     try {
       if (template) {
@@ -232,7 +234,12 @@ export function RecurringForm({
           <ListPicker value={listId} onChange={setListId} disabled={!canEdit} />
         </div>
 
-        <WeightField value={weight} onChange={setWeight} hint={hint} disabled={!canEdit} />
+        <ImportanceField
+          value={importance}
+          onChange={setImportance}
+          hint={hint}
+          disabled={!canEdit}
+        />
       </div>
 
       <p className="muted">

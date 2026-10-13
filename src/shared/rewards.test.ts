@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addDays } from './dates';
-import { COIN_ROUNDING, WEEKLY_BUDGET } from './economy';
+import { COIN_ROUNDING, WEEKLY_BUDGET, type Importance } from './economy';
 import {
   catchUpEntries,
   completionsPerWeek,
@@ -49,7 +49,12 @@ describe('normalization (13.3)', () => {
   const items = (n: number): EconomyItem[] =>
     Array.from({ length: n }, (_, i) => {
       const rules = RULES[i % RULES.length]!;
-      return { type: rules ? 'habit' : 'weekly', id: String(i), weight: (i % 10) + 1, rules };
+      return {
+        type: rules ? 'habit' : 'weekly',
+        id: String(i),
+        importance: ((i % 4) + 1) as Importance,
+        rules,
+      };
     });
 
   it.each([1, 4, 40])('a perfect week with %i items earns the budget (± rounding)', (n) => {
@@ -61,30 +66,67 @@ describe('normalization (13.3)', () => {
     expect(Math.abs(perfectWeek(list) - WEEKLY_BUDGET)).toBeLessThanOrEqual(tolerance);
   });
 
-  it('splits by weight and spreads over completions', () => {
+  it('splits by importance and frequency (completions per week ^ 0.75)', () => {
     const values = snapshotValues(
       [
-        { type: 'habit', id: 'a', weight: 3, rules: daily },
-        { type: 'weekly', id: 'b', weight: 1, rules: null },
+        { type: 'habit', id: 'a', importance: 2, rules: daily },
+        { type: 'weekly', id: 'b', importance: 2, rules: null },
       ],
       WEEKLY_BUDGET,
     );
-    expect(values.get('habit:a')).toBe(1070); // 7,500 / 7
-    expect(values.get('weekly:b')).toBe(2500);
+    // Weights 2 × 7^0.75 ≈ 8.61 and 2 × 1 = 2: shares ≈ 8,115 and 1,885.
+    expect(values.get('habit:a')).toBe(1160); // 8,115 / 7
+    expect(values.get('weekly:b')).toBe(1890);
+  });
+
+  it('daily earns most per month in total, monthly most per completion', () => {
+    const monthly = perMonth(1);
+    const values = snapshotValues(
+      [
+        { type: 'habit', id: 'd', importance: 2, rules: daily },
+        { type: 'weekly', id: 'w', importance: 2, rules: null },
+        { type: 'weekly', id: 'm', importance: 2, rules: monthly },
+      ],
+      WEEKLY_BUDGET,
+    );
+    const d = values.get('habit:d')!;
+    const w = values.get('weekly:w')!;
+    const m = values.get('weekly:m')!;
+    // Per completion: monthly > weekly > daily, but only "a bit more".
+    expect(m).toBeGreaterThan(w);
+    expect(w).toBeGreaterThan(d);
+    expect(w / d).toBeLessThan(2);
+    expect(m / d).toBeLessThan(3);
+    // Over a 28-day month: 28 daily ticks > 4 weekly tasks > 1 monthly task.
+    expect(28 * d).toBeGreaterThan(4 * w);
+    expect(4 * w).toBeGreaterThan(m);
+  });
+
+  it('a higher importance takes a bigger share', () => {
+    const values = snapshotValues(
+      [
+        { type: 'habit', id: 'light', importance: 1, rules: daily },
+        { type: 'habit', id: 'essential', importance: 4, rules: daily },
+      ],
+      WEEKLY_BUDGET,
+    );
+    // 8,000 / 7 and 2,000 / 7, each rounded to 10 coins.
+    expect(values.get('habit:essential')).toBe(1140);
+    expect(values.get('habit:light')).toBe(290);
   });
 
   it('per_month: target × 12 / 52 completions a week', () => {
     expect(completionsPerWeek(perMonth(4))).toBeCloseTo(48 / 52);
     const values = snapshotValues(
-      [{ type: 'habit', id: 'm', weight: 5, rules: perMonth(4) }],
+      [{ type: 'habit', id: 'm', importance: 2, rules: perMonth(4) }],
       10000,
     );
     expect(values.get('habit:m')).toBe(10830);
   });
 
   it('only items created before the Monday are in its snapshot', () => {
-    const habit = { id: 'h', weight: 5, archived: false, rules: daily };
-    const template = { id: 't', weight: 5, active: true, rules: null };
+    const habit = { id: 'h', importance: 2 as const, archived: false, rules: daily };
+    const template = { id: 't', importance: 2 as const, active: true, rules: null };
     const week = '2026-10-26';
     const ids = (list: EconomyItem[]) => list.map((item) => item.id);
     expect(

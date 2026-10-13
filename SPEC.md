@@ -359,14 +359,14 @@ This section replaces the earlier gamification design entirely (points per 7-day
 
 **Numbers:** don't change any number in this section on my own initiative. All numbers live in one config file (13.2) and I tune them. If a test or simulation shows a number doesn't work, report it and propose a change.
 
-All other SPEC rules still apply, including the design rules in §14, except for the animation exceptions in 13.11. Tasks, the calendar and All tasks are not affected by gamification, except for the new weight field on weekly tasks.
+All other SPEC rules still apply, including the design rules in §14, except for the animation exceptions in 13.11. Tasks, the calendar and All tasks are not affected by gamification, except for the importance field on recurring tasks.
 
 ---
 
 ### 13.1 Overview
 
 - Habits and weekly tasks earn **coins** and **XP**. Normal (one-off) tasks earn nothing.
-- Income is **normalized**: a perfect week always earns the same budget, however many habits and weekly tasks I have. Each item gets a share by its **weight**.
+- Income is **normalized**: a perfect week always earns the same budget, however many habits and weekly tasks I have. Each item gets a share by its **importance** and how often it repeats (13.3).
 - XP gives **levels**. Each level-up gives a mystery box.
 - Coins are spent in the **Shop**: mystery boxes, streak freezes, vacation days, cosmetics, and real-life rewards I define in the app.
 - **Mystery boxes** mostly contain pieces of a seasonal **art collection** of public-domain artworks. Duplicates become **shards**, which buy specific missing pieces.
@@ -381,8 +381,8 @@ All numbers in this document live in `src/shared/economy.ts`, with comments. Log
 
 ```
 WEEKLY_BUDGET            = 10000   // coins for a perfect week (base, before streak bonus)
-EXPECTED_RATE            = 0.70    // realistic share of a perfect week; prices are based on it
-TYPICAL_WEEK             = WEEKLY_BUDGET * EXPECTED_RATE   // = 7000
+EXPECTED_RATE            = 0.75    // realistic share of a perfect week; prices are based on it
+TYPICAL_WEEK             = WEEKLY_BUDGET * EXPECTED_RATE   // = 7500
 PRICE_ROUNDING           = 50      // shop prices rounded to nearest 50
 COIN_ROUNDING            = 10      // earned coins rounded to nearest 10
 XP_PER_COIN              = 0.1
@@ -399,16 +399,18 @@ GAMIFICATION_START       = '2026-10-19'   // Monday; first week snapshot and Sea
 
 ---
 
-### 13.3 Weights and weekly values
+### 13.3 Importance and weekly values
 
-**Weights**
-- Every habit and every weekly-task template gets a **weight from 1 to 10** (default 5), set in its create/edit form.
-- The form shows a live hint: "≈ 330 coins per tick from Monday". Normal tasks have no weight.
+**Importance** (replaced the earlier 1–10 weight; existing weights were mapped 1–3 → Light, 4–6 → Normal, 7–8 → Important, 9–10 → Essential)
+- Every habit and every recurring-task template gets one of **4 importance levels**, set in its create/edit form: **Light, Normal (default), Important, Essential**, weighing 1, 2, 3 and 4 (`IMPORTANCE_WEIGHTS`).
+- How often an item repeats also counts, damped by `FREQUENCY_EXPONENT` = 0.75, so nobody has to balance weights by hand. Over a 28-day month, all 28 ticks of a daily item earn more than all 4 completions of a weekly one, which earn more than the 1 completion of a monthly one; per completion it's the other way round, but only a bit (weekly ≈ 1.6×, monthly ≈ 2.3× a daily tick, at equal importance).
+- The form shows a live hint: "≈ 330 coins per tick from Monday". Normal tasks have no importance.
 
 **Weekly values (locked each Monday)**
-- Every Monday at 00:00 (Europe/Prague), or lazily on the first request of the week, the app creates a **week snapshot**. It records, for every active habit and weekly-task template, its weight and its **value per completion** for that week. The snapshot is computed in 3 steps:
+- Every Monday at 00:00 (Europe/Prague), or lazily on the first request of the week, the app creates a **week snapshot**. It records, for every active habit and recurring-task template, its importance and its **value per completion** for that week. The snapshot is computed in 3 steps:
 
 ```
+weight(item)             = IMPORTANCE_WEIGHTS[importance] × completionsPerWeek(item) ^ FREQUENCY_EXPONENT
 share(item)              = WEEKLY_BUDGET × weight(item) / sum of weights of all active items
 completionsPerWeek(item) = daily: 7
                            weekdays: number of selected weekdays
@@ -419,7 +421,7 @@ completionsPerWeek(item) = daily: 7
 valuePerCompletion(item) = round(share / completionsPerWeek, COIN_ROUNDING)
 ```
 
-- Edits to weights, new items, archived items and paused templates take effect at the **next** snapshot. Ticks always use the snapshot of the week they belong to.
+- Edits to importance, new items, archived items and paused templates take effect at the **next** snapshot. Ticks always use the snapshot of the week they belong to.
 - A habit or weekly task **created mid-week earns nothing until next Monday**. Its card shows "Earns from Mon".
 - Archived habits and paused or deleted templates are excluded from the next snapshot.
 
@@ -493,10 +495,10 @@ Prices are derived from `TYPICAL_WEEK` (7,000) and rounded to PRICE_ROUNDING:
 
 | Item | Formula | Price at defaults |
 |---|---|---|
-| Mystery box | TYPICAL_WEEK × 0.35 / 4 | 600 |
-| Streak freeze | = box | 600 |
-| Vacation day | = box × 0.5 | 300 |
-| Cosmetic (each) | = box × 3 | 1,800 |
+| Mystery box | TYPICAL_WEEK × 0.5 / 2.5 | 1,500 |
+| Streak freeze | = box | 1,500 |
+| Vacation day | = box × 0.5 | 750 |
+| Cosmetic (each) | = box × 1.2 | 1,800 |
 | Real-life reward | set by me | — |
 
 Lucky charms and coin pouches can't be bought; they only come from boxes.
@@ -607,7 +609,7 @@ The Habits tab gets a segmented control: **Habits · Shop · Inventory · Galler
 
 **Habits**
 - As today, plus each habit's coin value per tick and its streak multiplier ("×1.3").
-- Habit and weekly-task forms get the weight field (13.3).
+- Habit and weekly-task forms get the importance field (13.3).
 
 **Shop:** built-in items, cosmetics (each shown with a preview), my real-life rewards, and "Manage rewards".
 
@@ -706,7 +708,7 @@ New tables (names indicative; propose the final schema in your plan):
 - `owned_pieces`: season id, piece id, acquired at, source (box, shards)
 - `owned_cosmetics` and `settings.tickAnimation`
 - `freezes_used`: habit id, period
-- `weight` column on habits and recurring-task templates
+- `weight` column on habits and recurring-task templates (since 13.3's importance levels it stores the level 1–4)
 
 Every spend, open, use and arm is **atomic** (a D1 batch), so a double tap can never buy twice, open a box twice, or overspend.
 
@@ -721,7 +723,7 @@ Add a read-only MCP tool, `get_rewards(from, to)`. It returns:
 - inventory counts
 - ledger events in the range
 
-Claude can't buy, open, use or tick anything. Also add each habit's weight and value per tick to `list_habits`.
+Claude can't buy, open, use or tick anything. Also add each habit's importance and value per tick to `list_habits`.
 
 ---
 
@@ -741,9 +743,9 @@ Unit tests (Vitest) with a seeded RNG where randomness is involved:
 - **Start date:** nothing pays before 19 Oct. Pre-start history counts for streaks and counts, but milestones crossed before the start don't pay. The catch-up pays exactly what live operation would have, and running it twice pays nothing extra.
 
 **Balance simulation** (a test that prints a report and doesn't fail on the result):
-- The player has 4 daily habits with weights 3, 4, 5, 6 and 2 weekly tasks with weights 7, 8.
-- They complete 70% of items at random and arm a freeze on their best streak whenever they own one.
-- They spend about 35% of coins on boxes, open every box, and spend shards on missing pieces, legendary first.
+- The player has 3 daily habits (Normal, Normal, Important), a Mon–Fri habit (Normal), a 3× a week habit (Important), 2 weekly tasks (Normal, Light) and a monthly task (Normal).
+- They complete 75% of everything at random (≈ 0.75 of the maximum income) and arm a freeze on their best streak whenever they own one.
+- They spend 50% of their income on boxes, open every box, and spend shards on missing pieces, legendary first. Three 13-week seasons are played in a row; shards carry over.
 
 Report:
 - typical weekly income
@@ -751,7 +753,7 @@ Report:
 - weeks to complete a regular 13-week season, and the share of the season completed by week 13
 - weeks to reach level 10
 
-The design targets are about 4 boxes per typical week, level 10 in 8–13 weeks, and most of a season's collection within its 13 weeks. If results miss these, report the numbers and propose config changes. Don't apply them.
+The design target is that this player can finish each season's collection within its 13 weeks (counting milestone and level-up boxes), and reaches level 10 in 8–13 weeks. With a box at 1,500 coins the simulation finishes the collections around weeks 9–12 and reaches level 10 in week 12. If results miss these, report the numbers and propose config changes. Don't apply them.
 
 ---
 

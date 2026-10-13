@@ -14,6 +14,7 @@ import {
   overviewRangeError,
 } from '../../shared/assistant';
 import { addDays, dateInZone, isISODate } from '../../shared/dates';
+import { IMPORTANCE_NAMES } from '../../shared/economy';
 import type { TaskUpdateInput } from '../../shared/schemas';
 import { PRIORITIES, type List, type Task } from '../../shared/types';
 import * as schema from '../db/schema';
@@ -226,7 +227,7 @@ ${CONCEPTS}`,
     'list_habits',
     {
       title: 'List habits',
-      description: `The user’s habits with their frequency, current and best streak, whether they are due or done today, weekly / monthly progress, and rewards: weight (1–10, its share of the weekly coin budget), valuePerTick (coins per tick this week, before the streak bonus), nextTick (what a tick today would pay, with its streak multiplier) and earnsFromMonday (created this week, earns from the next week). Streaks count scheduled days (daily / set days), weeks (X× per week) or months (X× per month); a period that isn't finished yet doesn't break a streak. Archived habits are included with archived: true. Habits can't be ticked through this connector.`,
+      description: `The user’s habits with their frequency, current and best streak, whether they are due or done today, weekly / monthly progress, and rewards: importance (Light, Normal, Important or Essential: its share of the weekly coin budget), valuePerTick (coins per tick this week, before the streak bonus), nextTick (what a tick today would pay, with its streak multiplier) and earnsFromMonday (created this week, earns from the next week). Streaks count scheduled days (daily / set days), weeks (X× per week) or months (X× per month); a period that isn't finished yet doesn't break a streak. Archived habits are included with archived: true. Habits can't be ticked through this connector.`,
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     () =>
@@ -240,7 +241,7 @@ ${CONCEPTS}`,
             const info = summary.habits[habit.id];
             return {
               ...assistantHabit(habit, today, vacation),
-              weight: habit.weight,
+              importance: IMPORTANCE_NAMES[habit.importance],
               valuePerTick: info?.value ?? null,
               nextTick: info?.nextTick ?? null,
               earnsFromMonday: summary.started && !habit.archived && !info?.inSnapshot,

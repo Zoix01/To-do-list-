@@ -6,10 +6,15 @@ const defaults = { weeklyBudget: WEEKLY_BUDGET, expectedRate: EXPECTED_RATE };
 
 describe('shop prices (13.6)', () => {
   it('match the table at the defaults', () => {
-    expect(shopPrices(defaults)).toEqual({ box: 600, freeze: 600, vacation: 300, cosmetic: 1800 });
+    expect(shopPrices(defaults)).toEqual({
+      box: 1500,
+      freeze: 1500,
+      vacation: 750,
+      cosmetic: 1800,
+    });
   });
   it('follow the settings', () => {
-    expect(shopPrices({ weeklyBudget: 20000, expectedRate: 0.5 }).box).toBe(900); // 875 → 900
+    expect(shopPrices({ weeklyBudget: 20000, expectedRate: 0.5 }).box).toBe(2000);
   });
 });
 
@@ -17,7 +22,7 @@ describe('price hint', () => {
   it('days of a typical week, rounded to 0.5', () => {
     expect(priceHint(3000, defaults)).toBe('≈ 3 days of a typical week');
     expect(priceHint(1000, defaults)).toBe('≈ 1 day of a typical week');
-    expect(priceHint(1300, defaults)).toBe('≈ 1.5 days of a typical week');
+    expect(priceHint(1600, defaults)).toBe('≈ 1.5 days of a typical week');
     expect(priceHint(100, defaults)).toBe('≈ less than half a day of a typical week');
   });
 });

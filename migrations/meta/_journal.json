@@ -64,6 +64,13 @@
       "when": 1791914153078,
       "tag": "0008_habit_animation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791919319243,
+      "tag": "0009_importance_levels",
+      "breakpoints": true
     }
   ]
 }

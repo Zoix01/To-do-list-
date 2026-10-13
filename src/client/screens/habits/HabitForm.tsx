@@ -1,6 +1,6 @@
 import { Minus, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { WEIGHT_DEFAULT, WEEKLY_BUDGET } from '../../../shared/economy';
+import { IMPORTANCE_DEFAULT, WEEKLY_BUDGET, type Importance } from '../../../shared/economy';
 import type { HabitIcon, TickAnimation } from '../../../shared/cosmetics';
 import { normalizeHabitRules } from '../../../shared/habits';
 import {
@@ -14,7 +14,7 @@ import { ColorPicker } from '../../components/ColorPicker';
 import { Segmented, WeekdayPicker } from '../../components/pickers';
 import { HabitIconPicker } from '../../components/HabitIconPicker';
 import { HabitAnimationPicker } from './HabitAnimationPicker';
-import { WeightField } from '../../components/WeightField';
+import { ImportanceField } from '../../components/ImportanceField';
 import { errorMessage } from '../../lib/api';
 import { useApp } from '../../lib/appContext';
 import { useHabitMutations, useHabits, useRecurring, useRewards } from '../../lib/queries';
@@ -38,7 +38,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
   const [frequency, setFrequency] = useState<HabitFrequency>(habit?.frequency ?? 'daily');
   const [weekdays, setWeekdays] = useState<Weekday[]>(habit?.weekdays ?? []);
   const [target, setTarget] = useState<number>(habit?.target ?? 3);
-  const [weight, setWeight] = useState<number>(habit?.weight ?? WEIGHT_DEFAULT);
+  const [importance, setImportance] = useState<Importance>(habit?.importance ?? IMPORTANCE_DEFAULT);
   const [icon, setIcon] = useState<string | null>(habit?.icon ?? null);
   const [tickAnimation, setTickAnimation] = useState<string | null>(habit?.tickAnimation ?? null);
   const { data: templates } = useRecurring();
@@ -55,7 +55,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
     hintRules.ok && habits && templates
       ? `≈ ${formatCoins(
           nextWeekValue(
-            { type: 'habit', id: habit?.id ?? 'new', weight, rules: hintRules.rules },
+            { type: 'habit', id: habit?.id ?? 'new', importance, rules: hintRules.rules },
             habits,
             templates,
             rewards?.nextBudget ?? WEEKLY_BUDGET,
@@ -76,7 +76,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
     const fields = {
       name: name.trim(),
       color,
-      weight,
+      importance,
       icon: icon as HabitIcon | null,
       tickAnimation: tickAnimation as TickAnimation | null,
       ...normalized.rules,
@@ -161,7 +161,12 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
           </>
         )}
 
-        <WeightField value={weight} onChange={setWeight} hint={hint} disabled={!canEdit} />
+        <ImportanceField
+          value={importance}
+          onChange={setImportance}
+          hint={hint}
+          disabled={!canEdit}
+        />
 
         <span className="field-grid__label">Icon</span>
         <div className="field-grid__value">

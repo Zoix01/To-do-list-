@@ -54,7 +54,7 @@ export function nextWeekValue(
       .map((habit) => ({
         type: 'habit' as const,
         id: habit.id,
-        weight: habit.weight,
+        importance: habit.importance,
         rules: habit,
       })),
     ...templates
@@ -62,7 +62,7 @@ export function nextWeekValue(
       .map((template) => ({
         type: 'weekly' as const,
         id: template.id,
-        weight: template.weight,
+        importance: template.importance,
         rules: templateRules(template),
       })),
   ];

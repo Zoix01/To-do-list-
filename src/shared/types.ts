@@ -1,3 +1,4 @@
+import type { Importance } from './economy';
 import type { RewardIcon } from './shop';
 
 /** Calendar date as `YYYY-MM-DD`, no time. */
@@ -112,8 +113,8 @@ export interface RecurringTask {
   activeFrom: ISODate;
   /** Monday of the latest week already generated (each week is generated once). */
   generatedThrough: ISODate | null;
-  /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
-  weight: number;
+  /** Importance 1–4 (Light, Normal, Important, Essential): its share of the weekly coin budget (SPEC §13.3). */
+  importance: Importance;
   createdAt: Timestamp;
 }
 
@@ -132,8 +133,8 @@ export interface Habit {
   /** Only for 'per_week' (1–7) and 'per_month' (1–31). */
   target: number | null;
   archived: boolean;
-  /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
-  weight: number;
+  /** Importance 1–4 (Light, Normal, Important, Essential): its share of the weekly coin budget (SPEC §13.3). */
+  importance: Importance;
   /** Its own tick animation; null = the one chosen in Settings (SPEC §13.12). */
   tickAnimation: string | null;
   createdAt: Timestamp;
