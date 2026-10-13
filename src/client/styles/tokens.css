@@ -16,6 +16,8 @@
   --on-accent: var(--bg);
   /* Loose tasks (no list) */
   --no-list: var(--text-muted);
+  /* Streak freezes and rare art pieces (SPEC §13.9, §13.11) */
+  --ice: #6a9fb5;
 
   /* Typography */
   --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;

@@ -6,6 +6,8 @@ import type {
   ListUpdateInput,
   RecurringCreateInput,
   RecurringUpdateInput,
+  ShopRewardCreateInput,
+  ShopRewardUpdateInput,
   TaskCreateInput,
   TaskUpdateInput,
 } from '../../shared/schemas';
@@ -17,7 +19,10 @@ import type {
   Me,
   Priority,
   RecurringTask,
+  InventoryItem,
+  InventoryView,
   RewardsSummary,
+  ShopReward,
   Task,
 } from '../../shared/types';
 import { api, errorMessage } from './api';
@@ -34,11 +39,127 @@ export const keys = {
   habits: ['habits'] as const,
   connector: ['connector'] as const,
   rewards: ['rewards'] as const,
+  shopRewards: ['shop', 'rewards'] as const,
+  inventory: ['inventory'] as const,
 };
 
 /** Wallet, level and what each habit / weekly task earns (SPEC §13.10). */
 export function useRewards() {
   return useQuery({ queryKey: keys.rewards, queryFn: () => api<RewardsSummary>('/rewards') });
+}
+
+const NO_DAYS: string[] = [];
+
+/** Vacation days pause every habit (SPEC §13.9). */
+export function useVacationDays(): string[] {
+  return useRewards().data?.vacationDays ?? NO_DAYS;
+}
+
+export function useShopRewards() {
+  return useQuery({
+    queryKey: keys.shopRewards,
+    queryFn: () => api<ShopReward[]>('/shop/rewards'),
+  });
+}
+
+export function useInventory() {
+  return useQuery({ queryKey: keys.inventory, queryFn: () => api<InventoryView>('/inventory') });
+}
+
+/** Everything a purchase or an item change can affect. */
+function useInvalidateRewards() {
+  const queryClient = useQueryClient();
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: keys.rewards }),
+      queryClient.invalidateQueries({ queryKey: keys.inventory }),
+      queryClient.invalidateQueries({ queryKey: keys.habits }),
+    ]);
+}
+
+export function useShopMutations() {
+  const queryClient = useQueryClient();
+  const { showUndo, showError } = useFeedback();
+  const invalidate = useInvalidateRewards();
+  const invalidateRewards = () => queryClient.invalidateQueries({ queryKey: keys.shopRewards });
+  const onError = (error: unknown) => showError(errorMessage(error));
+
+  const refund = useMutation({
+    mutationFn: (id: string) => api(`/inventory/${id}/refund`, { method: 'POST' }),
+    onSettled: invalidate,
+    onError,
+  });
+  /** Buys an item; the toast offers to undo it (SPEC §13.6). */
+  const buy = useMutation({
+    mutationFn: (input: {
+      item: 'freeze' | 'vacation' | 'reward';
+      rewardId?: string;
+      name: string;
+    }) =>
+      api<InventoryItem>('/shop/buy', {
+        method: 'POST',
+        body: { item: input.item, rewardId: input.rewardId, requestId: crypto.randomUUID() },
+      }),
+    onSuccess: (item, input) => showUndo(`Bought ${input.name}`, () => refund.mutate(item.id)),
+    onSettled: invalidate,
+    onError,
+  });
+  const create = useMutation({
+    mutationFn: (input: ShopRewardCreateInput) =>
+      api<ShopReward>('/shop/rewards', { method: 'POST', body: input }),
+    onSuccess: invalidateRewards,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, changes }: { id: string; changes: ShopRewardUpdateInput }) =>
+      api<ShopReward>(`/shop/rewards/${id}`, { method: 'PATCH', body: changes }),
+    onSuccess: invalidateRewards,
+    onError,
+  });
+  const reorder = useMutation({
+    mutationFn: (ids: string[]) => api('/shop/rewards/order', { method: 'PUT', body: { ids } }),
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: keys.shopRewards });
+      const previous = queryClient.getQueryData<ShopReward[]>(keys.shopRewards);
+      const byId = new Map(previous?.map((reward) => [reward.id, reward]));
+      queryClient.setQueryData<ShopReward[]>(
+        keys.shopRewards,
+        ids.flatMap((id, sortOrder) => {
+          const reward = byId.get(id);
+          return reward ? [{ ...reward, sortOrder }] : [];
+        }),
+      );
+      return previous;
+    },
+    onError: (error, _ids, previous) => {
+      queryClient.setQueryData(keys.shopRewards, previous);
+      onError(error);
+    },
+    onSettled: invalidateRewards,
+  });
+  return { buy, refund, create, update, reorder };
+}
+
+/** Arming freezes, planning vacation days, using rewards (SPEC §13.9). */
+export function useInventoryMutations() {
+  const { showError } = useFeedback();
+  const invalidate = useInvalidateRewards();
+  const useAction = <T>(run: (input: T) => Promise<unknown>) =>
+    useMutation({
+      mutationFn: run,
+      onSettled: invalidate,
+      onError: (error: unknown) => showError(errorMessage(error)),
+    });
+  return {
+    arm: useAction(({ id, habitId }: { id: string; habitId: string }) =>
+      api(`/inventory/${id}/arm`, { method: 'POST', body: { habitId } }),
+    ),
+    unarm: useAction((id: string) => api(`/inventory/${id}/unarm`, { method: 'POST' })),
+    planVacation: useAction(({ id, date }: { id: string; date: string }) =>
+      api(`/inventory/${id}/vacation`, { method: 'POST', body: { date } }),
+    ),
+    cancelVacation: useAction((id: string) => api(`/inventory/${id}/cancel`, { method: 'POST' })),
+    useReward: useAction((id: string) => api(`/inventory/${id}/use`, { method: 'POST' })),
+  };
 }
 
 export function useConnector() {

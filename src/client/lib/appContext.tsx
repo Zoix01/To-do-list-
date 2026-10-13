@@ -7,7 +7,9 @@ import {
   useLists,
   useOpenTasks,
   useRecurring,
+  useInventory,
   useRewards,
+  useShopRewards,
 } from './queries';
 
 interface AppValue {
@@ -31,6 +33,8 @@ export function AppProvider({ timeZone, children }: { timeZone: string; children
   useRecurring();
   useHabits();
   useRewards();
+  useShopRewards();
+  useInventory();
   const value = useMemo(() => {
     const lists = [...(data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
     return {

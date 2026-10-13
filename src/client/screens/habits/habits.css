@@ -370,3 +370,224 @@
     opacity: 0;
   }
 }
+
+/* Frozen and vacation days in the month grid (SPEC §13.9). */
+.month-grid__day {
+  position: relative;
+}
+
+.month-grid__mark {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.month-grid__day.is-checked .month-grid__mark {
+  color: var(--bg);
+}
+
+.month-grid__day.is-frozen:not(.is-checked) {
+  border-color: var(--border);
+  background: transparent;
+}
+
+.month-grid__day.is-frozen .month-grid__mark {
+  color: var(--ice);
+}
+
+.month-grid__day.is-vacation:not(.is-checked) {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.month-legend svg {
+  vertical-align: -1px;
+}
+
+/* ---------------------------------------------------------------- Shop and Inventory (SPEC §13.10) */
+
+.habits-nav {
+  margin-bottom: var(--space-3);
+}
+
+.habits-nav .segmented__option {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.habits-nav .segmented__option[aria-current='page'] {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.shop-list,
+.history,
+.choice-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shop-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--row-height);
+  padding: var(--space-1) 0;
+  border-bottom: var(--hairline);
+}
+
+.shop-row__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 24px;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.shop-row__icon .is-armed {
+  color: var(--ice);
+}
+
+.shop-row__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--text-title);
+}
+
+.shop-row__text .muted {
+  font-size: var(--text-meta);
+}
+
+.shop-row__open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shop-row__order {
+  display: inline-flex;
+}
+
+.shop-list.is-archived .shop-row {
+  opacity: 0.6;
+}
+
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text);
+  font-size: var(--text-body);
+}
+
+.price svg {
+  color: var(--text-muted);
+}
+
+.reward-price {
+  width: 120px;
+}
+
+.vacation-date {
+  width: auto;
+  margin: var(--space-3) 0;
+}
+
+.icon-picker {
+  display: grid;
+  grid-template-columns: repeat(8, 36px);
+  gap: var(--space-1);
+}
+
+@media (max-width: 559px) {
+  .icon-picker {
+    grid-template-columns: repeat(6, 36px);
+  }
+}
+
+.icon-picker__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0;
+  border: var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.icon-picker__option:hover:not(:disabled, [aria-checked='true']) {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.icon-picker__option[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.choice-list {
+  margin: var(--space-3) 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.choice-list__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--row-height);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-title);
+  text-align: left;
+}
+
+.choice-list__option:hover {
+  background: var(--surface);
+}
+
+.history__row {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline);
+  font-size: var(--text-body);
+}
+
+.history__date {
+  font-size: var(--text-meta);
+}
+
+.history__amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.history__amount .is-gain {
+  color: var(--accent);
+}

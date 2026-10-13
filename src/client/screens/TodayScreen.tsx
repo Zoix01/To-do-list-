@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { formatShortDate } from '../../shared/dates';
-import { showOnToday } from '../../shared/habits';
+import { marksOf, showOnToday } from '../../shared/habits';
 import { todaySections, type TodaySections } from '../../shared/tasks';
 import type { Task } from '../../shared/types';
 import { AddTaskButton, ScreenHeader } from '../components/AppShell';
 import { TaskList } from '../components/TaskRow';
 import { useApp } from '../lib/appContext';
-import { useHabits, useOpenTasks } from '../lib/queries';
+import { useHabits, useOpenTasks, useVacationDays } from '../lib/queries';
 import { Link } from '../lib/router';
 import { HabitRow } from './habits/HabitRow';
 import './habits/habits.css';
@@ -23,11 +23,15 @@ export function TodayScreen() {
   const { today, lists } = useApp();
   const { data: tasks } = useOpenTasks();
   const { data: habits } = useHabits();
+  const vacationDays = useVacationDays();
   const sections = useMemo(() => todaySections(tasks ?? [], today), [tasks, today]);
   const visible = SECTIONS.filter((section) => sections[section.key].length > 0);
   // Habits due today, or already ticked today so they can be unticked (SPEC §7).
+  // On a vacation day nothing is due (SPEC §13.9).
   const habitsToday = (habits ?? []).filter(
-    (habit) => !habit.archived && showOnToday(habit, new Set(habit.checks), today),
+    (habit) =>
+      !habit.archived &&
+      showOnToday(habit, new Set(habit.checks), today, marksOf(habit, vacationDays)),
   );
 
   return (

@@ -1,9 +1,15 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { currentStreak, formatStreak, habitProgress, isScheduled } from '../../../shared/habits';
+import {
+  currentStreak,
+  formatStreak,
+  habitProgress,
+  isScheduled,
+  marksOf,
+} from '../../../shared/habits';
 import type { HabitWithChecks } from '../../../shared/types';
 import { Checkbox } from '../../components/controls';
 import { useApp } from '../../lib/appContext';
-import { useHabitMutations, useRewards } from '../../lib/queries';
+import { useHabitMutations, useRewards, useVacationDays } from '../../lib/queries';
 import { celebrationLines, formatCoins } from '../../lib/rewards';
 import { useRouter } from '../../lib/router';
 
@@ -24,8 +30,11 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
   const [burst, setBurst] = useState<Burst | null>(null);
   const checks = new Set(habit.checks);
   const checked = checks.has(today);
-  const streak = currentStreak(habit, checks, today);
-  const progress = habitProgress(habit, checks, today);
+  const vacationDays = useVacationDays();
+  const marks = marksOf(habit, vacationDays);
+  const streak = currentStreak(habit, checks, today, marks);
+  const progress = habitProgress(habit, checks, today, marks);
+  const onVacation = marks.vacation.has(today);
   const restDay = habit.frequency === 'weekdays' && !isScheduled(habit, today);
   const info = rewards?.started && !habit.archived ? rewards.habits[habit.id] : undefined;
   const celebrating = Boolean(burst?.lines.length);
@@ -100,7 +109,7 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
               {progress.label}
             </span>
           )}
-          {restDay && <span>not today</span>}
+          {onVacation ? <span>vacation day</span> : restDay && <span>not today</span>}
           {info && !info.inSnapshot && <span>Earns from Mon</span>}
           {info?.nextTick && (
             <span className="mono-figures" title="Coins for a tick today">

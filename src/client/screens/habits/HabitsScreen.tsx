@@ -6,7 +6,7 @@ import { useStoredState } from '../../lib/hooks';
 import { useHabits } from '../../lib/queries';
 import { HabitForm } from './HabitForm';
 import { HabitRow } from './HabitRow';
-import { RewardsHeader } from './RewardsHeader';
+import { HabitsNav } from './HabitsNav';
 import './habits.css';
 
 /** Active habits with today's tick and streak; archived ones collapsed (SPEC §8.4). */
@@ -23,7 +23,7 @@ export function HabitsScreen() {
         title="Habits"
         actions={<AddButton label="Add habit" onClick={() => setAdding(true)} />}
       />
-      <RewardsHeader />
+      <HabitsNav />
       {habits && active.length === 0 && (
         <p className="empty">No habits yet. Add one you want to keep up.</p>
       )}

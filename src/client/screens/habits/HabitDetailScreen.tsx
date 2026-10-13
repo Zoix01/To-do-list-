@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Snowflake, TreePalm } from 'lucide-react';
 import { useState, type CSSProperties } from 'react';
 import {
   addDays,
@@ -18,12 +18,14 @@ import {
   formatStreak,
   habitProgress,
   isScheduled,
+  marksOf,
+  type HabitMarks,
 } from '../../../shared/habits';
 import type { HabitWithChecks, ISODate } from '../../../shared/types';
 import { ScreenHeader } from '../../components/AppShell';
 import { ConfirmDialog, Dialog } from '../../components/Dialog';
 import { useApp } from '../../lib/appContext';
-import { useHabitMutations, useHabits } from '../../lib/queries';
+import { useHabitMutations, useHabits, useVacationDays } from '../../lib/queries';
 import { useRouter } from '../../lib/router';
 import { HabitForm } from './HabitForm';
 import './habits.css';
@@ -47,12 +49,14 @@ function MonthGrid({
   checks,
   month,
   startedOn,
+  marks,
   onToggle,
 }: {
   habit: HabitWithChecks;
   checks: ReadonlySet<ISODate>;
   month: ISODate;
   startedOn: ISODate;
+  marks: HabitMarks;
   onToggle: (date: ISODate, checked: boolean) => void;
 }) {
   const { today, canEdit } = useApp();
@@ -79,14 +83,30 @@ function MonthGrid({
         const outside = startOfMonth(date) !== month;
         const future = date > today;
         const scheduled = isScheduled(habit, date);
+        const vacation = marks.vacation.has(date);
+        // A frozen week / month shows its ice icon on its last day (SPEC §13.9).
+        const frozen = dayBased
+          ? scheduled && marks.frozen.has(date)
+          : habit.frequency === 'per_week'
+            ? date === addDays(mondayOf(date), 6) && marks.frozen.has(mondayOf(date))
+            : date === endOfMonth(date) && marks.frozen.has(startOfMonth(date));
         const missed =
-          dayBased && scheduled && !checked && date < today && date >= startedOn && !outside;
+          dayBased &&
+          scheduled &&
+          !checked &&
+          !frozen &&
+          !vacation &&
+          date < today &&
+          date >= startedOn &&
+          !outside;
         const classes = [
           'month-grid__day',
           outside && 'is-outside',
           checked && 'is-checked',
           missed && 'is-missed',
           !scheduled && 'is-rest',
+          frozen && !outside && 'is-frozen',
+          vacation && !outside && 'is-vacation',
           date === today && 'is-today',
         ]
           .filter(Boolean)
@@ -97,11 +117,18 @@ function MonthGrid({
             type="button"
             className={classes}
             aria-pressed={checked}
-            aria-label={`${formatShortDate(date)}${checked ? ', done' : missed ? ', missed' : ''}`}
+            aria-label={`${formatShortDate(date)}${checked ? ', done' : missed ? ', missed' : ''}${
+              frozen ? ', frozen' : ''
+            }${vacation ? ', vacation' : ''}`}
             disabled={future || outside || !canEdit || habit.archived}
             onClick={() => onToggle(date, !checked)}
           >
             {Number(date.slice(8))}
+            {!outside && (frozen || vacation) && (
+              <span className="month-grid__mark" aria-hidden="true">
+                {frozen ? <Snowflake size={10} /> : <TreePalm size={10} />}
+              </span>
+            )}
           </button>
         );
       })}
@@ -114,6 +141,7 @@ export function HabitDetailScreen({ id }: { id: string }) {
   const { today, timeZone, canEdit } = useApp();
   const { data: habits } = useHabits();
   const { update, remove, setCheck } = useHabitMutations();
+  const vacationDays = useVacationDays();
   const { navigate } = useRouter();
   const [month, setMonth] = useState(startOfMonth(today));
   const [editing, setEditing] = useState(false);
@@ -134,10 +162,11 @@ export function HabitDetailScreen({ id }: { id: string }) {
   // The habit counts as started at its creation, or at its earliest tick if back-filled before.
   const createdOn = dateInZone(new Date(habit.createdAt), timeZone);
   const startedOn = habit.checks[0] && habit.checks[0] < createdOn ? habit.checks[0] : createdOn;
-  const current = currentStreak(habit, checks, today);
-  const best = bestStreak(habit, checks, today);
-  const rate = completionRate(habit, checks, today, startedOn);
-  const progress = habitProgress(habit, checks, today);
+  const marks = marksOf(habit, vacationDays);
+  const current = currentStreak(habit, checks, today, marks);
+  const best = bestStreak(habit, checks, today, marks);
+  const rate = completionRate(habit, checks, today, startedOn, marks);
+  const progress = habitProgress(habit, checks, today, marks);
   const thisMonth = startOfMonth(today);
 
   return (
@@ -195,6 +224,15 @@ export function HabitDetailScreen({ id }: { id: string }) {
         </dd>
         <dt>Best streak</dt>
         <dd className="mono-figures">{formatStreak(best, habit.frequency)}</dd>
+        {habit.armedFreezes > 0 && (
+          <>
+            <dt>Freezes</dt>
+            <dd>
+              <Snowflake size={14} aria-hidden="true" className="muted" />
+              {habit.armedFreezes} armed
+            </dd>
+          </>
+        )}
         <dt>Completion</dt>
         <dd>
           {rate.rate === null ? (
@@ -236,9 +274,19 @@ export function HabitDetailScreen({ id }: { id: string }) {
           checks={checks}
           month={month}
           startedOn={startedOn}
+          marks={marks}
           onToggle={(date, checked) => setCheck.mutate({ id: habit.id, date, checked })}
         />
-        <p className="muted month-legend">Tap a day to tick or untick it.</p>
+        <p className="muted month-legend">
+          Tap a day to tick or untick it.
+          {(habit.frozen.length > 0 || vacationDays.length > 0) && (
+            <>
+              {' '}
+              <Snowflake size={12} aria-hidden="true" /> streak freeze ·{' '}
+              <TreePalm size={12} aria-hidden="true" /> vacation day
+            </>
+          )}
+        </p>
       </section>
 
       <Dialog open={editing} onClose={() => setEditing(false)} title="Edit habit" hideTitle>
