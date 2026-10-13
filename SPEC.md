@@ -641,6 +641,11 @@ Cosmetics are owned forever and unlock immediately when bought or won. They're m
 - One animation is selected **globally**; the default is always available.
 - Each animation has a preview in the Shop and in Settings.
 
+**Habit icons:** each habit can have an icon, chosen in the habit form from a curated set of **60 Lucide icons**, grouped (health, learning, music, sport, home, social…). Not emoji.
+- **30 are free** from the start. The other **30 are cosmetics, each sold individually** at the cosmetic price, and can also come from a box's cosmetic result.
+- Locked icons are shown in the picker as locked and can't be chosen.
+- Habits without an icon look as they do today.
+
 ---
 
 ### 13.13 Seasons and art
@@ -745,7 +750,7 @@ Stop after each step so I can test:
 1. Weights, week snapshots, earning, ledger, XP and levels, milestones, header, habit values and multipliers in the UI, default tick animation
 2. Shop and Inventory: real-life rewards (manage view, icon picker, price hint), freezes, vacation days, purchase undo, History
 3. Season 1 (and the art for the rest of the first year), mystery boxes, box opening animation, lucky charm, coin pouch, shards, Gallery, `CREDITS.md`
-4. Cosmetics: extra list colors, 4 tick animations, Settings → Appearance and Gamification
+4. Cosmetics: extra list colors, 4 tick animations, habit icon picker (30 free + 30 to unlock), Settings → Appearance and Gamification
 5. `get_rewards` MCP tool and the `list_habits` additions, README update, balance simulation report
 
 ---
