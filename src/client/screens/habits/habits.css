@@ -1091,3 +1091,10 @@
     animation: reward-fade-out 1100ms linear forwards !important;
   }
 }
+
+/* The test period before the real start (SPEC §13.18). */
+.rewards-bar__test {
+  width: 100%;
+  color: var(--accent);
+  font-size: var(--text-meta);
+}

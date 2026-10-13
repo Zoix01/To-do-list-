@@ -40,6 +40,7 @@ import {
 } from '../db/schema';
 import type { Db, Env } from '../env';
 import { loadOwnedCosmetics, loadTickAnimation } from './cosmetics';
+import { grantTestCoins, resetAfterTest, testActive, type TestPeriod } from './testMode';
 import { loadEconomy, loadMarks, marksFor, settleAllFreezes } from './inventory';
 
 /*
@@ -54,6 +55,16 @@ export interface RewardsContext {
   timeZone: string;
   /** GAMIFICATION_START, or REWARDS_START for local testing. */
   start: ISODate;
+  /** An optional test period before the start (services/testMode.ts). */
+  test: TestPeriod | null;
+}
+
+/**
+ * The day Season 1 starts for boxes and the Gallery: the rewards start, or today
+ * during a test period, so the test can open boxes with art.
+ */
+export function seasonStart(ctx: RewardsContext): ISODate {
+  return testActive(ctx.test, ctx.today) && ctx.today < ctx.start ? ctx.today : ctx.start;
 }
 
 export function rewardsStart(env: Env): ISODate {
@@ -338,6 +349,11 @@ const preparedWeeks = new Set<string>();
  * change it, and runs the one-time catch-up once rewards have started (13.2).
  */
 export async function prepareRewards(ctx: RewardsContext): Promise<void> {
+  if (ctx.test) {
+    if (testActive(ctx.test, ctx.today)) await grantTestCoins(ctx.db, ctx.today, ctx.test);
+    // The test ends before the real start: wipe what it produced first.
+    else if (await resetAfterTest(ctx.db)) preparedWeeks.clear();
+  }
   if (ctx.today < ctx.start) return;
   const weekStart = mondayOf(ctx.today);
   if (preparedWeeks.has(weekStart)) return;
@@ -490,6 +506,8 @@ export async function rewardsSummary(ctx: RewardsContext): Promise<RewardsSummar
       budget: snapshotRow?.budget ?? budget,
     },
     nextBudget: budget,
+    test: testActive(ctx.test, today) ? { until: ctx.test!.until } : null,
+    seasonStart: seasonStart(ctx),
     economy,
     prices: shopPrices(economy),
     vacationDays: [...marks.vacation].sort(),

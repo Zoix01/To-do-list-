@@ -149,7 +149,7 @@ function SeasonSection({
 export function GalleryScreen() {
   const { today, timeZone } = useApp();
   const { data: rewards } = useRewards();
-  const all = rewards ? seasonsFrom(rewards.start) : SEASONS;
+  const all = rewards ? seasonsFrom(rewards.seasonStart) : SEASONS;
   const { data: ownedList } = useGallery();
   const [viewing, setViewing] = useState<Artwork | null>(null);
   const owned = new Map((ownedList ?? []).map((piece) => [piece.pieceId, piece]));

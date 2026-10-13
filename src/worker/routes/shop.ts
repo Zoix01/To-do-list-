@@ -33,12 +33,13 @@ import {
   useReward,
 } from '../services/inventory';
 import { seasonsFrom } from '../../shared/seasonData';
-import type { Env } from '../env';
 import { buyPiece, loadOwnedPieces, openBoxItem, useCharm } from '../services/boxes';
 import { buyCosmetic, refundCosmetic, setEconomy, setTickAnimation } from '../services/cosmetics';
-import { rewardsStart } from '../services/rewards';
+import { seasonStart } from '../services/rewards';
+import { rewardsContext } from './rewards';
+import type { Context } from 'hono';
 
-const seasonsOf = (env: Env) => seasonsFrom(rewardsStart(env));
+const seasonsOf = (c: Context<AppEnv>) => seasonsFrom(seasonStart(rewardsContext(c)));
 
 /** The Shop: my real-life rewards and buying (SPEC §13.6). */
 export const shopRoutes = new Hono<AppEnv>()
@@ -133,11 +134,11 @@ export const inventoryRoutes = new Hono<AppEnv>()
   // Opening a box returns its stored result; opening it again returns the same one (13.7).
   .post('/:id/open', async (c) =>
     c.json<BoxOpening>(
-      await openBoxItem(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env)),
+      await openBoxItem(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c)),
     ),
   )
   .post('/:id/charm', async (c) => {
-    await useCharm(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env));
+    await useCharm(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c));
     return c.body(null, 204);
   })
   .post('/:id/use', async (c) => {
@@ -149,7 +150,7 @@ export const inventoryRoutes = new Hono<AppEnv>()
 export const galleryRoutes = new Hono<AppEnv>()
   .get('/', async (c) => c.json<OwnedPiece[]>(await loadOwnedPieces(c.get('db'))))
   .post('/pieces/:id/buy', async (c) => {
-    await buyPiece(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env));
+    await buyPiece(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c));
     return c.body(null, 204);
   });
 

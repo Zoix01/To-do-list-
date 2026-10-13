@@ -28,6 +28,7 @@ import {
   type RewardsContext,
 } from '../services/rewards';
 import { rewardsReport } from '../services/rewardsReport';
+import { testPeriod, type TestPeriod } from '../services/testMode';
 import { createTask, loadOpenTasks, updateTask } from '../services/tasks';
 
 /*
@@ -83,8 +84,14 @@ async function loadLists(db: Db): Promise<List[]> {
   return db.select().from(lists).orderBy(asc(lists.sortOrder));
 }
 
-function buildServer(db: Db, today: string, timeZone: string, start: string): McpServer {
-  const rewards: RewardsContext = { db, today, timeZone, start };
+function buildServer(
+  db: Db,
+  today: string,
+  timeZone: string,
+  start: string,
+  test: TestPeriod | null,
+): McpServer {
+  const rewards: RewardsContext = { db, today, timeZone, start, test };
   const server = new McpServer(
     { name: 'planner', title: 'Planner', version: '1.0.0' },
     { instructions: INSTRUCTIONS },
@@ -355,7 +362,7 @@ export const mcpHandler = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const db = drizzle(env.DB, { schema });
     const today = dateInZone(new Date(), env.TIMEZONE);
-    const server = buildServer(db, today, env.TIMEZONE, rewardsStart(env));
+    const server = buildServer(db, today, env.TIMEZONE, rewardsStart(env), testPeriod(env));
     // Stateless: a fresh server and transport per request, JSON responses.
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,

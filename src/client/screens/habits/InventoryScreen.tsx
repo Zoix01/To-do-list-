@@ -160,7 +160,9 @@ function historyText(entry: HistoryEntry): string {
     case 'level':
       return `Level ${entry.detail?.level}`;
     case 'buy':
-      return `Bought ${entry.name ?? 'an item'}`;
+      return entry.detail?.item === 'test'
+        ? 'Test coins (removed when the rewards start)'
+        : `Bought ${entry.name ?? 'an item'}`;
     case 'refund':
       return `Undid buying ${entry.name ?? 'an item'}`;
     case 'use':

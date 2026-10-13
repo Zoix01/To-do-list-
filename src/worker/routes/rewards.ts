@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import type { RewardsSummary } from '../../shared/types';
 import type { AppEnv } from '../env';
 import { rewardsStart, rewardsSummary, type RewardsContext } from '../services/rewards';
+import { testPeriod } from '../services/testMode';
 
 export function rewardsContext(c: Context<AppEnv>): RewardsContext {
   return {
@@ -10,6 +11,7 @@ export function rewardsContext(c: Context<AppEnv>): RewardsContext {
     today: c.get('today'),
     timeZone: c.env.TIMEZONE,
     start: rewardsStart(c.env),
+    test: testPeriod(c.env),
   };
 }
 

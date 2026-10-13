@@ -31,12 +31,17 @@ export function RewardsHeader() {
   }, [level]);
 
   if (!data) return null;
-  if (!data.started) {
+  if (!data.started && !data.test) {
     return <p className="rewards-bar muted">Rewards start {formatShortDate(data.start)}</p>;
   }
   const progress = Math.min(100, (data.xpIntoLevel / data.xpForNext) * 100);
   return (
     <div className="rewards-bar">
+      {data.test && (
+        <span className="rewards-bar__test">
+          Test until {formatShortDate(data.test.until)}: everything bought or won resets then
+        </span>
+      )}
       <span
         className={leveledUp ? 'rewards-bar__level is-leveling' : 'rewards-bar__level'}
         onAnimationEnd={() => setLeveledUp(false)}

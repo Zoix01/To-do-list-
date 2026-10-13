@@ -193,6 +193,10 @@ export interface RewardsSummary {
   week: { start: ISODate; earned: number; budget: number };
   /** Budget of the next snapshot, for the "≈ 330 coins per tick from Monday" hints. */
   nextBudget: number;
+  /** A test period before the start: the Shop works, everything is wiped on `until`. */
+  test: { until: ISODate } | null;
+  /** The day Season 1 starts for boxes and the Gallery (today during a test). */
+  seasonStart: ISODate;
   /** Typical week and current shop prices (13.6). */
   economy: { weeklyBudget: number; expectedRate: number };
   prices: { box: number; freeze: number; vacation: number; cosmetic: number };

@@ -10,6 +10,10 @@ export interface Env {
   TIMEZONE: string;
   /** Overrides GAMIFICATION_START (YYYY-MM-DD), for trying rewards out locally in .dev.vars. */
   REWARDS_START?: string;
+  /** Optional test period before the start (YYYY-MM-DD): Shop and Gallery work, then all is wiped on this day. */
+  TEST_UNTIL?: string;
+  /** Coins granted once for the test period. */
+  TEST_COINS?: string;
   /** Claude connector grants and tokens (SPEC §9.1). Optional: without it the connector is off. */
   OAUTH_KV?: KVNamespace;
   /** Added by the OAuth provider for requests it passes on to the app. */
