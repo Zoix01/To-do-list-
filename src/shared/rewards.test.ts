@@ -490,3 +490,37 @@ describe('catch-up (13.2)', () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
+
+describe('a mid-week start (13.2)', () => {
+  const THURSDAY = '2026-10-15';
+  it('ticks pay from the start day, not the days before', () => {
+    const pay = (date: string) =>
+      tickPay({
+        rules: daily,
+        checks: new Set([date]),
+        date,
+        today: '2026-10-16',
+        start: THURSDAY,
+        value: 300,
+        paidInPeriod: 0,
+        catchUp: true,
+      });
+    expect(pay('2026-10-14')).toBeNull();
+    expect(pay('2026-10-15')?.coins).toBe(300);
+  });
+
+  it('a recurring task of the start week pays; one of an earlier week doesn’t', () => {
+    const reward = (weekStart: string) =>
+      weeklyReward({
+        templateId: 't',
+        weekStart,
+        value: 800,
+        completedBefore: 0,
+        alreadyPaid: false,
+        today: '2026-10-17',
+        start: THURSDAY,
+      }).coins;
+    expect(reward('2026-10-12')).toBe(800);
+    expect(reward('2026-10-05')).toBe(0);
+  });
+});

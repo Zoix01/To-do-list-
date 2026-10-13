@@ -15,8 +15,12 @@ export const PRICE_ROUNDING = 50;
 export const COIN_ROUNDING = 10;
 /** XP per coin earned from ticks and weekly tasks (13.4). */
 export const XP_PER_COIN = 0.1;
-/** Monday; nothing earns before it. First week snapshot and Season 1 start (13.2). */
-export const GAMIFICATION_START: ISODate = '2026-10-19';
+/**
+ * Thursday 15 Oct 2026: nothing earns before it (13.2). It may fall mid-week: its
+ * week still gets a full snapshot, but only the days from the start earn, so the
+ * first week earns less. Season 1 starts on it too.
+ */
+export const GAMIFICATION_START: ISODate = '2026-10-15';
 
 /**
  * Importance of a habit or recurring task, chosen in its form (13.3):

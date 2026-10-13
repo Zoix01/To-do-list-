@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { addDays } from './dates';
+import { GAMIFICATION_START } from './economy';
 import { SEASONS } from './seasonData';
 import { currentSeason, piecesOf } from './seasons';
 
@@ -10,15 +11,15 @@ describe('season files (13.13)', () => {
   });
 
   it('Season 1 starts with the rewards and runs until the end of February', () => {
-    expect(SEASONS[0]).toMatchObject({ start: '2026-10-19', end: '2027-02-28' });
-    expect(currentSeason(SEASONS, '2026-10-19')?.id).toBe(SEASONS[0]!.id);
+    expect(SEASONS[0]).toMatchObject({ start: GAMIFICATION_START, end: '2027-02-28' });
+    expect(currentSeason(SEASONS, GAMIFICATION_START)?.id).toBe(SEASONS[0]!.id);
   });
 
   it('seasons follow each other without gaps (meteorological seasons)', () => {
     for (let i = 1; i < SEASONS.length; i++) {
       expect(SEASONS[i]!.start).toBe(addDays(SEASONS[i - 1]!.end, 1));
     }
-    expect(SEASONS.map((s) => s.start.slice(5))).toEqual(['10-19', '03-01', '06-01', '09-01']);
+    expect(SEASONS.map((s) => s.start.slice(5))).toEqual(['10-15', '03-01', '06-01', '09-01']);
   });
 
   it.each(SEASONS.map((season) => [season.name, season] as const))(
@@ -52,7 +53,7 @@ describe('seasonsFrom', () => {
   it('moves Season 1 earlier with an earlier rewards start, never later', async () => {
     const { seasonsFrom } = await import('./seasonData');
     expect(seasonsFrom('2026-10-05')[0]!.start).toBe('2026-10-05');
-    expect(seasonsFrom('2026-11-01')[0]!.start).toBe('2026-10-19');
+    expect(seasonsFrom('2026-11-01')[0]!.start).toBe('2026-10-15');
     expect(seasonsFrom('2026-10-05')[1]!.start).toBe('2027-03-01');
   });
 });

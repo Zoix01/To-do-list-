@@ -279,7 +279,9 @@ export interface WeeklyRewardInput {
 export function weeklyReward(input: WeeklyRewardInput): Reward {
   if (input.today < input.start) return NOTHING;
   const coins =
-    !input.alreadyPaid && input.value !== null && input.weekStart >= input.start ? input.value : 0;
+    !input.alreadyPaid && input.value !== null && addDays(input.weekStart, 6) >= input.start
+      ? input.value
+      : 0;
   return {
     coins,
     xp: xpForCoins(coins),

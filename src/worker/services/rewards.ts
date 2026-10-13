@@ -141,7 +141,8 @@ async function valueOf(
   id: string,
   weekStart: ISODate,
 ): Promise<number | null> {
-  if (weekStart < ctx.start) return null;
+  // The week the rewards start in counts, even when they start mid-week.
+  if (addDays(weekStart, 6) < ctx.start) return null;
   return (await ensureSnapshot(ctx, weekStart)).get(itemKey(type, id)) ?? null;
 }
 

@@ -386,14 +386,14 @@ TYPICAL_WEEK             = WEEKLY_BUDGET * EXPECTED_RATE   // = 7500
 PRICE_ROUNDING           = 50      // shop prices rounded to nearest 50
 COIN_ROUNDING            = 10      // earned coins rounded to nearest 10
 XP_PER_COIN              = 0.1
-GAMIFICATION_START       = '2026-10-19'   // Monday; first week snapshot and Season 1 start
+GAMIFICATION_START       = '2026-10-15'   // Thursday; first earning day and Season 1 start
 ```
 
-**Start date (Monday 19 Oct 2026)**
-- Nothing earns rewards before `GAMIFICATION_START`. The first week snapshot is for the week of 19 Oct.
+**Start date (Thursday 15 Oct 2026, moved from Mon 19 Oct at my request: a lighter test week)**
+- Nothing earns rewards before `GAMIFICATION_START`. The first week snapshot is for the week of 12 Oct; its full values apply, but only Thu–Sun can be earned, so that week earns less. Recurring tasks of that week pay if completed from the start on.
 - Habit history from before the start still counts for **streak lengths** (and so for the streak multiplier) and for **completion counts**. But milestones whose threshold was crossed before the start are **not** awarded retroactively; only thresholds crossed on or after the start pay.
 - If Phase 5 is deployed **after** the start date, run a one-time catch-up on deployment. It creates the snapshots and pays all ticks, weekly tasks, milestones and level-ups from the start date up to deployment, exactly as if the system had been live (the yesterday-only back-fill limit doesn't apply to this catch-up). It's idempotent through the ledger.
-- If Phase 5 is deployed **before** the start date, the Habits header shows "Rewards start Mon 19 Oct", and the Shop and Inventory are visible but empty.
+- If Phase 5 is deployed **before** the start date, the Habits header shows "Rewards start Thu 15 Oct", and the Shop and Inventory are visible but empty.
 
 `WEEKLY_BUDGET` and `EXPECTED_RATE` are also editable in Settings → Gamification. All prices update from them.
 
@@ -666,7 +666,7 @@ Cosmetics are owned forever and unlock immediately when bought or won. They're m
 
 **Seasons**
 - Seasons are meteorological, in Europe/Prague: spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb.
-- **Season 1 is longer:** "Winter 2026/27" runs from **19 Oct 2026** (`GAMIFICATION_START`) until 28 Feb 2027. Regular seasons start on 1 Mar 2027.
+- **Season 1 is longer:** "Winter 2026/27" runs from **15 Oct 2026** (`GAMIFICATION_START`) until 28 Feb 2027. Regular seasons start on 1 Mar 2027.
 - Each season's art is **inspired by that season of the year** (Season 1: winter, then spring, summer, autumn). The art is the only thing that changes between seasons.
 - If no newer season has started when one ends, the latest season that has started stays the current one (its "days left" shows "Ended"), so boxes are never empty.
 
@@ -740,7 +740,7 @@ Unit tests (Vitest) with a seeded RNG where randomness is involved:
 - **Shards:** shards from duplicates, and piece prices for current and past seasons.
 - **Freezes and vacation days:** auto-consumption, un-arming, vacation target reduction, cancelling, and weekly tasks staying unaffected.
 - **Seasons:** boundaries in Europe/Prague, and the extended Season 1.
-- **Start date:** nothing pays before 19 Oct. Pre-start history counts for streaks and counts, but milestones crossed before the start don't pay. The catch-up pays exactly what live operation would have, and running it twice pays nothing extra.
+- **Start date:** nothing pays before the start (also when it falls mid-week). Pre-start history counts for streaks and counts, but milestones crossed before the start don't pay. The catch-up pays exactly what live operation would have, and running it twice pays nothing extra.
 
 **Balance simulation** (a test that prints a report and doesn't fail on the result):
 - The player has 3 daily habits (Normal, Normal, Important), a Mon–Fri habit (Normal), a 3× a week habit (Important), 2 weekly tasks (Normal, Light) and a monthly task (Normal).
