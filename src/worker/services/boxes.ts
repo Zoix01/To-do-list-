@@ -1,5 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { canUseCharm, openBox, secureRng, type BoxResult } from '../../shared/boxes';
+import { COSMETICS, findCosmetic } from '../../shared/cosmetics';
+import { loadOwnedCosmetics } from './cosmetics';
 import { currentSeason, findPiece, piecePrice, piecesOf, type Season } from '../../shared/seasons';
 import { shopPrices } from '../../shared/shop';
 import type { BoxOpening, ISODate, OwnedPiece } from '../../shared/types';
@@ -51,6 +53,7 @@ export async function openBoxItem(
   const season = currentSeason(seasons, today);
   const owned = await ownedPieceIds(db);
   const charm = await armedCharm(db);
+  const ownedCosmetics = await loadOwnedCosmetics(db);
   const rewards = await db
     .select({
       id: shopRewards.id,
@@ -64,8 +67,7 @@ export async function openBoxItem(
     pieces: season ? piecesOf(season) : [],
     owned,
     rewards,
-    // Cosmetics arrive in step 4 of §13.17; until then this result falls back to a coin pouch.
-    unownedCosmetics: [],
+    unownedCosmetics: COSMETICS.map((c) => c.id).filter((id) => !ownedCosmetics.has(id)),
     charm: Boolean(charm),
     boxPrice: shopPrices(await loadEconomy(db)).box,
   });
@@ -97,13 +99,24 @@ export async function openBoxItem(
     date: today,
     coins: result.type === 'pouch' ? result.coins : 0,
     shards: piece?.shards ?? 0,
-    detail: { ...result, name: reward?.name ?? null },
+    detail: {
+      ...result,
+      name:
+        reward?.name ??
+        (result.type === 'cosmetic' ? (findCosmetic(result.cosmeticId)?.name ?? null) : null),
+    },
   };
   statements.push(eventIf(event, mine, now));
   if (piece && !piece.duplicate) {
     statements.push(sql`
       INSERT INTO owned_pieces (piece_id, season_id, acquired_at, source)
       SELECT ${piece.pieceId}, ${season!.id}, ${now}, 'box' WHERE ${mine}
+      ON CONFLICT DO NOTHING`);
+  }
+  if (result.type === 'cosmetic') {
+    statements.push(sql`
+      INSERT INTO owned_cosmetics (cosmetic_id, acquired_at, source, source_key)
+      SELECT ${result.cosmeticId}, ${now}, 'box', ${`box:${boxId}`} WHERE ${mine}
       ON CONFLICT DO NOTHING`);
   }
   if (result.type === 'charm' || result.type === 'freeze' || result.type === 'vacation' || reward) {

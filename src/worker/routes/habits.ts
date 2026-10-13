@@ -8,6 +8,7 @@ import type { EarnedReward, Habit, HabitWithChecks } from '../../shared/types';
 import { habitChecks, habits } from '../db/schema';
 import type { AppEnv, Db } from '../env';
 import { badRequest, notFound, readBody } from '../http';
+import { assertCosmeticsAvailable } from '../services/cosmetics';
 import { loadHabits } from '../services/habits';
 import { payTick } from '../services/rewards';
 import { rewardsContext } from './rewards';
@@ -25,13 +26,14 @@ export const habitRoutes = new Hono<AppEnv>()
   )
   .post('/', async (c) => {
     const input = await readBody(c, habitCreateSchema);
+    await assertCosmeticsAvailable(c.get('db'), { color: input.color, icon: input.icon });
     const normalized = normalizeHabitRules(input);
     if (!normalized.ok) throw badRequest(normalized.error);
     const habit: Habit = {
       id: crypto.randomUUID(),
       name: input.name,
       color: input.color,
-      icon: null,
+      icon: input.icon ?? null,
       ...normalized.rules,
       archived: false,
       weight: input.weight ?? WEIGHT_DEFAULT,
@@ -44,6 +46,7 @@ export const habitRoutes = new Hono<AppEnv>()
     const input = await readBody(c, habitUpdateSchema);
     const db = c.get('db');
     const existing = await findHabit(db, c.req.param('id'));
+    await assertCosmeticsAvailable(db, { color: input.color, icon: input.icon });
     const normalized = normalizeHabitRules({
       frequency: input.frequency ?? existing.frequency,
       weekdays: input.weekdays ?? existing.weekdays,

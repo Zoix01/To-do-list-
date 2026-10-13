@@ -251,3 +251,12 @@ export const ownedPieces = sqliteTable('owned_pieces', {
   acquiredAt: text('acquired_at').notNull(),
   source: text('source').$type<'box' | 'shards'>().notNull(),
 });
+
+/** Cosmetics I own, forever (13.12). */
+export const ownedCosmetics = sqliteTable('owned_cosmetics', {
+  cosmeticId: text('cosmetic_id').primaryKey(),
+  acquiredAt: text('acquired_at').notNull(),
+  source: text('source').$type<'purchase' | 'box'>().notNull(),
+  /** The ledger key of the purchase, or the box that gave it. */
+  sourceKey: text('source_key').notNull(),
+});

@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { listCreateSchema, listOrderSchema, listUpdateSchema } from '../../shared/schemas';
 import { lists, recurringTasks, tasks } from '../db/schema';
 import type { AppEnv } from '../env';
+import { assertCosmeticsAvailable } from '../services/cosmetics';
 import { badRequest, notFound, readBody } from '../http';
 
 export const listRoutes = new Hono<AppEnv>()
@@ -12,6 +13,7 @@ export const listRoutes = new Hono<AppEnv>()
   .post('/', async (c) => {
     const input = await readBody(c, listCreateSchema);
     const db = c.get('db');
+    await assertCosmeticsAvailable(db, { color: input.color });
     const last = await db
       .select({ value: max(lists.sortOrder) })
       .from(lists)
@@ -43,6 +45,7 @@ export const listRoutes = new Hono<AppEnv>()
   .patch('/:id', async (c) => {
     const input = await readBody(c, listUpdateSchema);
     const db = c.get('db');
+    await assertCosmeticsAvailable(db, { color: input.color });
     const [list] = await db
       .update(lists)
       .set(input)

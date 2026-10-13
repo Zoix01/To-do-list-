@@ -39,6 +39,7 @@ import {
   weekSnapshots,
 } from '../db/schema';
 import type { Db, Env } from '../env';
+import { loadOwnedCosmetics, loadTickAnimation } from './cosmetics';
 import { loadEconomy, loadMarks, marksFor, settleAllFreezes } from './inventory';
 
 /*
@@ -491,6 +492,8 @@ export async function rewardsSummary(ctx: RewardsContext): Promise<RewardsSummar
     economy,
     prices: shopPrices(economy),
     vacationDays: [...marks.vacation].sort(),
+    cosmetics: [...(await loadOwnedCosmetics(db))].sort(),
+    tickAnimation: await loadTickAnimation(db),
     habits: habitInfo,
     weekly: weeklyInfo,
   };

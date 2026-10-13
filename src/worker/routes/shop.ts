@@ -1,8 +1,11 @@
 import { asc, eq, max } from 'drizzle-orm';
 import { Hono } from 'hono';
 import {
+  appearanceSchema,
   armSchema,
   buySchema,
+  cosmeticBuySchema,
+  economySchema,
   listOrderSchema,
   shopRewardCreateSchema,
   shopRewardUpdateSchema,
@@ -32,6 +35,7 @@ import {
 import { seasonsFrom } from '../../shared/seasonData';
 import type { Env } from '../env';
 import { buyPiece, loadOwnedPieces, openBoxItem, useCharm } from '../services/boxes';
+import { buyCosmetic, refundCosmetic, setEconomy, setTickAnimation } from '../services/cosmetics';
 import { rewardsStart } from '../services/rewards';
 
 const seasonsOf = (env: Env) => seasonsFrom(rewardsStart(env));
@@ -82,6 +86,16 @@ export const shopRoutes = new Hono<AppEnv>()
       .returning();
     if (!reward) throw notFound('Reward not found');
     return c.json(reward);
+  })
+  // Cosmetics unlock right away instead of going to the Inventory (13.12).
+  .post('/cosmetics/:id/buy', async (c) => {
+    const { requestId } = await readBody(c, cosmeticBuySchema);
+    await buyCosmetic(c.get('db'), c.get('today'), c.req.param('id'), requestId);
+    return c.body(null, 204);
+  })
+  .post('/cosmetics/:id/refund', async (c) => {
+    await refundCosmetic(c.get('db'), c.get('today'), c.req.param('id'));
+    return c.body(null, 204);
   })
   .post('/buy', async (c) => {
     const input = await readBody(c, buySchema);
@@ -136,5 +150,17 @@ export const galleryRoutes = new Hono<AppEnv>()
   .get('/', async (c) => c.json<OwnedPiece[]>(await loadOwnedPieces(c.get('db'))))
   .post('/pieces/:id/buy', async (c) => {
     await buyPiece(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env));
+    return c.body(null, 204);
+  });
+
+/** Settings → Appearance and Gamification (SPEC §13.2, §13.12). */
+export const gamificationSettingsRoutes = new Hono<AppEnv>()
+  .put('/appearance', async (c) => {
+    const { tickAnimation } = await readBody(c, appearanceSchema);
+    await setTickAnimation(c.get('db'), tickAnimation);
+    return c.body(null, 204);
+  })
+  .put('/economy', async (c) => {
+    await setEconomy(c.get('db'), await readBody(c, economySchema));
     return c.body(null, 204);
   });
