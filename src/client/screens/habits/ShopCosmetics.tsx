@@ -2,6 +2,7 @@ import { Check } from 'lucide-react';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { COSMETICS, type Cosmetic, type HabitIcon } from '../../../shared/cosmetics';
 import { Checkbox } from '../../components/controls';
+import { BuyButton } from '../../components/BuyButton';
 import { TickEffect } from '../../components/TickEffect';
 import { useApp } from '../../lib/appContext';
 import { HABIT_ICON_COMPONENTS } from '../../lib/habitIcons';
@@ -50,16 +51,14 @@ function CosmeticTile({ cosmetic, visual }: { cosmetic: Cosmetic; visual: ReactN
           <Check size={14} aria-hidden="true" /> Owned
         </span>
       ) : (
-        <button
-          type="button"
-          className="button cosmetic-tile__buy"
-          disabled={!canEdit || !affordable || buy.isPending}
-          aria-label={`Buy ${cosmetic.name}`}
+        <BuyButton
+          disabled={!canEdit || !affordable}
+          label={`Buy ${cosmetic.name}`}
           title={affordable ? undefined : 'Not enough coins'}
-          onClick={() => buy.mutate({ id: cosmetic.id, name: cosmetic.name })}
+          onBuy={() => buy.mutateAsync({ id: cosmetic.id, name: cosmetic.name })}
         >
           <Price coins={price} />
-        </button>
+        </BuyButton>
       )}
     </li>
   );

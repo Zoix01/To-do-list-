@@ -12,6 +12,9 @@
   --accent: #e8925a;
   --danger: #d9675a;
   --warning: #d9b25a;
+  /* Darker ember for highlights (a bought button, a press); --text on it passes AA */
+  --ember-deep: #9a4f27;
+  --ember-soft: color-mix(in srgb, var(--accent) 16%, transparent);
   /* Text on accent / danger fills */
   --on-accent: var(--bg);
   /* Loose tasks (no list) */

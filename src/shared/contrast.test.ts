@@ -24,6 +24,8 @@ function contrast(a: string, b: string): number {
 
 const PAIRS: [text: string, background: string][] = [
   ['text', 'bg'],
+  // A bought button flashes in the darker ember with light text.
+  ['text', 'ember-deep'],
   ['text', 'surface'],
   ['text', 'surface-raised'],
   ['text-muted', 'bg'],

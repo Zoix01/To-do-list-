@@ -806,6 +806,7 @@ Stop after each step so I can test:
   - The habit icon picker shows the 60 icons in 8 groups (Health, Sport, Learning, Music & art, Home, Social, Mind, Work) plus "No icon"; locked ones show a lock. A habit's icon shows before its name in habit rows.
   - Every tick keeps the checkbox pop, the coins float and the streak bump; the habit's animation (its own, or the global one) plays around the checkbox. Ripple was dropped and sparks became the free default; a stored animation that no longer exists falls back to it. With reduced motion only the fade remains. Previews: tap the small circle (Shop tiles and Settings).
   - Settings → Appearance chooses the tick animation (default, or owned ones) and shows how many colors and icons are unlocked. Settings → Gamification edits the weekly budget (1,000–1,000,000) and expected rate (10–100%), showing the resulting prices before saving.
+- **Buying feedback** (user request): Buy buttons carry an ember outline and press in when tapped; once bought they flash "✓ Bought" in a darker ember (`--ember-deep` #9A4F27, with `--text` on it, AA). The coins in the header count down to the new value with "−1,250" drifting below them, and a bought item's icon flies to the Inventory tab, which bumps as it lands (cosmetics unlock in place, so they don't fly). With reduced motion all of it is a plain fade. Darker ember shades may be used for highlights like these.
 
 ---
 

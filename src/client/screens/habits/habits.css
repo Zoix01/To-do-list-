@@ -972,3 +972,122 @@
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* ---------------------------------------------------------------- Buying feedback (SPEC §13.10) */
+
+/* Buy buttons carry the ember: an outline that fills on hover, presses in on tap. */
+.buy-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  transition:
+    background-color var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out),
+    transform 120ms var(--ease-out);
+}
+
+.buy-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--ember-soft);
+}
+
+.buy-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.buy-button.is-pending {
+  background: var(--ember-soft);
+  opacity: 1;
+}
+
+.buy-button.is-bought {
+  border-color: var(--ember-deep);
+  background: var(--ember-deep);
+  color: var(--text);
+  opacity: 1;
+  animation: buy-pop 360ms var(--ease-out);
+}
+
+@keyframes buy-pop {
+  0% {
+    transform: scale(0.92);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The coins in the header after a purchase: a short ember flash and "−1,250" drifting down. */
+.rewards-bar__coins {
+  position: relative;
+}
+
+.rewards-bar__coins.is-spending .mono-figures {
+  color: var(--accent);
+}
+
+.coin-delta {
+  position: absolute;
+  top: 100%;
+  left: 18px;
+  color: var(--accent);
+  font-size: var(--text-meta);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: coin-delta 1100ms var(--ease-out) forwards;
+}
+
+@keyframes coin-delta {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* A bought item flies to the Inventory tab, which bumps when it lands. */
+.fly-icon {
+  position: fixed;
+  z-index: 100;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+.habits-nav .segmented__option.is-receiving {
+  animation: inventory-receive 420ms var(--ease-out);
+}
+
+@keyframes inventory-receive {
+  0% {
+    background: var(--ember-soft);
+    color: var(--accent);
+  }
+  40% {
+    background: var(--ember-deep);
+    color: var(--text);
+  }
+  100% {
+    background: var(--surface);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buy-button.is-bought,
+  .habits-nav .segmented__option.is-receiving {
+    animation: reward-fade 300ms linear !important;
+  }
+  .coin-delta {
+    animation: reward-fade-out 1100ms linear forwards !important;
+  }
+}

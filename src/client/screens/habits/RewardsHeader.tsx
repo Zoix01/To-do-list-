@@ -2,6 +2,7 @@ import { Coins, Gem } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { formatShortDate } from '../../../shared/dates';
 import { useRewards } from '../../lib/queries';
+import { useAnimatedNumber } from '../../lib/motion';
 import { formatCoins } from '../../lib/rewards';
 
 /** Level with its XP bar, coins and shards, and this week's earnings (SPEC §13.10). */
@@ -10,6 +11,18 @@ export function RewardsHeader() {
   const previousLevel = useRef<number | null>(null);
   const [leveledUp, setLeveledUp] = useState(false);
   const level = data?.level;
+  // Coins count down (or up) to their new value; a spend also shows "−1,250" (SPEC §13.10).
+  const coins = useAnimatedNumber(data?.coins ?? 0);
+  const previousCoins = useRef<number | null>(null);
+  const [spent, setSpent] = useState<{ id: number; amount: number } | null>(null);
+
+  useEffect(() => {
+    if (data?.coins === undefined) return;
+    const before = previousCoins.current;
+    if (before !== null && data.coins < before)
+      setSpent({ id: Date.now(), amount: before - data.coins });
+    previousCoins.current = data.coins;
+  }, [data?.coins]);
 
   useEffect(() => {
     if (level === undefined) return;
@@ -43,9 +56,26 @@ export function RewardsHeader() {
       <span className="muted mono-figures">
         {formatCoins(data.xpIntoLevel)} / {formatCoins(data.xpForNext)} XP
       </span>
-      <span className="rewards-bar__stat" aria-label={`${formatCoins(data.coins)} coins`}>
+      <span
+        className={
+          spent
+            ? 'rewards-bar__stat rewards-bar__coins is-spending'
+            : 'rewards-bar__stat rewards-bar__coins'
+        }
+        aria-label={`${formatCoins(data.coins)} coins`}
+      >
         <Coins size={14} aria-hidden="true" />
-        <span className="mono-figures">{formatCoins(data.coins)}</span>
+        <span className="mono-figures">{formatCoins(coins)}</span>
+        {spent && (
+          <span
+            key={spent.id}
+            className="coin-delta"
+            aria-hidden="true"
+            onAnimationEnd={() => setSpent(null)}
+          >
+            −{formatCoins(spent.amount)}
+          </span>
+        )}
       </span>
       <span className="rewards-bar__stat" aria-label={`${formatCoins(data.shards)} shards`}>
         <Gem size={14} aria-hidden="true" />

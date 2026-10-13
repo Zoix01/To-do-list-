@@ -1,5 +1,8 @@
 import { Coins, Package, Snowflake, TreePalm } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import type { BuyInput } from '../../../shared/schemas';
+import { BuyButton } from '../../components/BuyButton';
+import { flyToInventory } from '../../lib/motion';
 import { ScreenHeader } from '../../components/AppShell';
 import { useApp } from '../../lib/appContext';
 import { useRewards, useShopMutations, useShopRewards } from '../../lib/queries';
@@ -25,35 +28,39 @@ function ShopRow({
   name,
   note,
   price,
-  onBuy,
+  item,
 }: {
   icon: ReactNode;
   name: string;
   note?: string;
   price: number;
-  onBuy: () => void;
+  item: Pick<BuyInput, 'item' | 'rewardId'>;
 }) {
   const { canEdit } = useApp();
   const { data: rewards } = useRewards();
   const { buy } = useShopMutations();
+  const iconRef = useRef<HTMLSpanElement>(null);
   const affordable = (rewards?.coins ?? 0) >= price;
   return (
     <li className="shop-row">
-      <span className="shop-row__icon">{icon}</span>
+      <span className="shop-row__icon" ref={iconRef}>
+        {icon}
+      </span>
       <span className="shop-row__text">
         <span>{name}</span>
         {note && <span className="muted">{note}</span>}
       </span>
       <Price coins={price} />
-      <button
-        type="button"
-        className="button"
-        disabled={!canEdit || !affordable || buy.isPending}
+      <BuyButton
+        disabled={!canEdit || !affordable}
         title={affordable ? undefined : 'Not enough coins'}
-        onClick={onBuy}
-      >
-        Buy
-      </button>
+        label={`Buy ${name}`}
+        onBuy={async () => {
+          await buy.mutateAsync({ ...item, name });
+          // The bought item flies to the Inventory tab.
+          flyToInventory(iconRef.current?.querySelector('svg') ?? null);
+        }}
+      />
     </li>
   );
 }
@@ -62,7 +69,6 @@ function ShopRow({
 export function ShopScreen() {
   const { data: rewards } = useRewards();
   const { data: shopRewards } = useShopRewards();
-  const { buy } = useShopMutations();
   const active = (shopRewards ?? []).filter((reward) => !reward.archived);
   const prices = rewards?.prices;
 
@@ -80,21 +86,21 @@ export function ShopScreen() {
               name="Mystery box"
               note="An art piece, coins or an item; open it in the Inventory"
               price={prices.box}
-              onBuy={() => buy.mutate({ item: 'box', name: 'Mystery box' })}
+              item={{ item: 'box' }}
             />
             <ShopRow
               icon={<Snowflake size={18} aria-hidden="true" />}
               name="Streak freeze"
               note="Arm it on a habit; it saves the streak when you miss once"
               price={prices.freeze}
-              onBuy={() => buy.mutate({ item: 'freeze', name: 'Streak freeze' })}
+              item={{ item: 'freeze' }}
             />
             <ShopRow
               icon={<TreePalm size={18} aria-hidden="true" />}
               name="Vacation day"
               note="Pauses all habits for one day"
               price={prices.vacation}
-              onBuy={() => buy.mutate({ item: 'vacation', name: 'Vacation day' })}
+              item={{ item: 'vacation' }}
             />
           </ul>
         </section>
@@ -120,7 +126,7 @@ export function ShopScreen() {
                 icon={<RewardIconView icon={reward.icon} size={18} />}
                 name={reward.name}
                 price={reward.price}
-                onBuy={() => buy.mutate({ item: 'reward', rewardId: reward.id, name: reward.name })}
+                item={{ item: 'reward', rewardId: reward.id }}
               />
             ))}
           </ul>
