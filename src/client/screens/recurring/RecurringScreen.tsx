@@ -1,11 +1,10 @@
 import { Pause, Play } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { formatWeekdayShort } from '../../../shared/dates';
 import { describeSchedule, periodStartOf } from '../../../shared/recurrence';
 import { czechCollator } from '../../../shared/tasks';
 import type { RecurringTask, Task } from '../../../shared/types';
 import { AddButton, ScreenHeader } from '../../components/AppShell';
-import { Checkbox } from '../../components/controls';
 import { Dialog } from '../../components/Dialog';
 import { PriorityTag, titleClass } from '../../components/TaskRow';
 import { useApp } from '../../lib/appContext';
@@ -15,14 +14,12 @@ import {
   useRecurring,
   useRecurringMutations,
   useRewards,
-  useTaskMutations,
 } from '../../lib/queries';
 import { RecurringForm } from './RecurringForm';
 
 function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: () => void }) {
   const { listsById, canEdit, today } = useApp();
   const { update } = useRecurringMutations();
-  const { complete, uncomplete } = useTaskMutations();
   const { data: openTasks } = useOpenTasks();
   const { data: completedTasks } = useCompletedTasks();
   const { data: rewards } = useRewards();
@@ -31,39 +28,21 @@ function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: ()
   const earnsFromMonday =
     rewards?.started && template.active && !rewards.weekly[template.id]?.inSnapshot;
 
-  // This week's or month's tasks of the template (SPEC §6.1).
+  // Monthly progress: this month's tasks of the template (SPEC §6.1).
   const periodStart = periodStartOf(template.period, today);
   const inPeriod = (task: Task) =>
     task.recurringId === template.id && task.weekStart === periodStart;
-  const open = (openTasks ?? [])
-    .filter(inPeriod)
-    .sort((a, b) => a.deadline.localeCompare(b.deadline));
-  const done = (completedTasks ?? [])
-    .filter(inPeriod)
-    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
-  const total = open.length + done.length;
-  const checked = total > 0 && open.length === 0;
-  const periodName = template.period === 'month' ? 'this month' : 'this week';
-
-  function toggle() {
-    if (open[0]) complete.mutate(open[0]);
-    else if (done[0]) uncomplete.mutate(done[0].id);
-  }
+  const open = (openTasks ?? []).filter(inPeriod).length;
+  const done = (completedTasks ?? []).filter(inPeriod).length;
+  const total = open + done;
 
   return (
     <li className={template.active ? 'task-row' : 'task-row is-paused'}>
-      <Checkbox
-        checked={checked}
-        color={list?.color ?? null}
-        label={
-          total === 0
-            ? `No “${template.title}” task ${periodName}`
-            : checked
-              ? `Bring back “${template.title}” for ${periodName}`
-              : `Complete “${template.title}” for ${periodName}`
-        }
-        disabled={!canEdit || total === 0}
-        onChange={toggle}
+      {/* Templates can't be ticked off; their tasks are completed where they show up. */}
+      <span
+        className="template-ring"
+        style={{ '--check-color': list?.color ?? 'var(--no-list)' } as CSSProperties}
+        aria-hidden="true"
       />
       <button type="button" className="task-row__main" onClick={onOpen}>
         <span className={titleClass(template.priority)}>{template.title}</span>
@@ -73,9 +52,9 @@ function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: ()
           {template.period === 'month' && total > 0 && (
             <span>
               <span className="mono">
-                {done.length}/{total}
+                {done}/{total}
               </span>{' '}
-              {periodName}
+              this month
             </span>
           )}
           {list && <span>{list.name}</span>}

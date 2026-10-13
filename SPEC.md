@@ -164,7 +164,7 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
 - Instances are normal tasks everywhere (Today, All tasks, calendar, editing). They show a small **repeat icon** after the title in task rows and the task panel.
 - Recurring tasks are managed in the **Recurring** screen (formerly "Weekly"): list of templates with their schedule, plus "add recurring task".
 
-### 6.1 Monthly tasks and ticking from the list (Phase 5, step 1b)
+### 6.1 Monthly tasks (Phase 5, step 1b)
 
 - A template repeats **weekly** (as above) or **monthly**. Monthly templates have two modes:
   - **On set days of the month** (e.g. the 1st and 15th): each chosen day becomes a task planned and due on that day. Day 29–31 means the last day in shorter months (two days falling on the same date make one task).
@@ -172,7 +172,7 @@ Overdue tasks are **never moved automatically**. They stay on their dates and ar
 - Monthly instances are created when the month begins (lazily, like weekly ones); completing one doesn't create next month's early. Each month is generated once (`generatedThrough` = 1st of the latest month).
 - **First month:** instances due before the day the template was created or resumed (`activeFrom`) are skipped; the rest of this month's are created right away.
 - An instance's `weekStart` holds the start of its period (Monday, or the 1st for monthly), and `occurrence` tells instances of the same period apart (the day of month for set days, k for N times). The unique index is (`recurringId`, `weekStart`, `occurrence`).
-- **Ticking from the list:** each template row has a checkbox for its current week or month. Ticking completes that period's open task with the earliest deadline; unticking brings the most recently completed one back. Monthly rows show progress, e.g. "1/2 this month". With no task in the current period (e.g. created after its day passed) the checkbox is disabled.
+- **No ticking in the Recurring list:** templates keep their ring marker; their tasks are completed where they show up (Today, All tasks, calendar). Monthly rows show progress, e.g. "1/2 this month".
 - **Rewards:** a monthly template earns like a monthly habit with N completions (N × 12/52 a week, §13.3). A recurring task pays the value of the week its deadline falls in. Count milestones apply per template.
 
 ---
@@ -275,7 +275,7 @@ The metadata follows the title directly (not right-aligned), so everything is re
 List of active habits with today's tick state, current streak, and progress for per_week/per_month ("2/4 this week"). Tap → detail screen (§7). Archived habits in a collapsed section.
 
 ### 8.5 Recurring
-Templates (§6), grouped by schedule (weekly on a set day, weekly any day, monthly), with create/edit/pause/delete and a checkbox for the current period (§6.1).
+Templates (§6), grouped by schedule (weekly on a set day, weekly any day, monthly), with create/edit/pause/delete, and monthly progress (§6.1).
 
 ### 8.6 Lists, Completed, Settings
 Lists: manage lists (§5.4). Completed: archive (§5.3). Settings: log out, theme info, and the connector setup info (§9).

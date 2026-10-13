@@ -626,8 +626,25 @@
   color: var(--warning);
 }
 
-.task-row.is-paused .task-row__title {
+/* Recurring templates: a ring marker (templates can't be ticked off). */
+.template-ring {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0 9px;
+  border: 2px solid var(--check-color);
+  border-radius: 50%;
+}
+
+.task-row.is-paused .task-row__title,
+.task-row.is-paused .template-ring {
   opacity: 0.55;
+}
+
+@media (pointer: coarse) {
+  .template-ring {
+    margin: 0 15px;
+  }
 }
 
 .paused-tag {
