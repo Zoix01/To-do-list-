@@ -763,7 +763,9 @@ Stop after each step so I can test:
 - **"This week"** in the header counts coins by the week the tick or weekly task belongs to.
 - **Habit value shown:** what the next tick would pay, plus the multiplier, e.g. "+430 · ×1.3".
 - **Over target:** the cap counts ticks already paid in the period, so unticking and ticking another day can't pay past the target.
-- **Streak milestones** are checked only when a tick extends a streak, never on an untick.
+- **Streak milestones** are checked only when a tick extends a streak, never on an untick. Back-filling a gap only pays thresholds that neither joined part had reached.
+- **Day off:** ticking a weekdays habit on a day that isn't scheduled earns no coins (its weekly value is spread over its scheduled days only).
+- **Trying it out early:** an optional `REWARDS_START` variable (e.g. in a local `wrangler.jsonc`) overrides `GAMIFICATION_START`, for testing before the real start date.
 - **Weekly task completed:** the coins are added to the existing completion toast, e.g. "Completed · +500".
 - **Cosmetics icon:** palette (§14 rules out sparkle icons).
 - **Lucky charm:** only one can be active at a time.
