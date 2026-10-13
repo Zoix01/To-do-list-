@@ -790,6 +790,14 @@ Stop after each step so I can test:
   - Vacation days lower what a per_week / per_month streak needs, not what can be earned: the over-target cap stays the full target. Past vacation days disappear from the Inventory (they are spent); only today's and planned ones show, and only future ones can be cancelled.
   - Real-life rewards cost 1–1,000,000 coins, are reordered with up/down buttons, and are archived (and restored) from their edit form.
   - History lists the last 1,000 ledger rows, newest first; tick income is summed per day.
+- **Step 3 (boxes, seasons, Gallery):**
+  - Season files live in `seasons/` (one JSON per season, loaded automatically) and images in `public/art/<season id>/` as WebP, at most 1600 px on the long side. Pieces are numbered row by row from 0; each artwork names its legendary and rare piece.
+  - The Gallery shows only seasons that have started, so future art stays a surprise. Before Season 1 starts it says when it does.
+  - The Gallery is the fourth Habits tab (`/habits/gallery`). A completed artwork opens large with its title, artist, year and completion date (when its last piece arrived). Art images are cached for offline use once seen.
+  - Mystery boxes can be bought in the Shop and opened one at a time from the Inventory ("Open another" continues). The box shakes at least 0.9 s while the server rolls and stores the result.
+  - The lucky charm is used from the Inventory (one active at a time) and consumed by the next box, which then gives an unowned piece.
+  - The cosmetic box result falls back to a coin pouch until cosmetics exist (step 4).
+  - Buying a piece with shards is one transaction: it only goes through with enough shards and while the piece is still missing.
 
 ---
 
