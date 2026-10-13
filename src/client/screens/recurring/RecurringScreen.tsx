@@ -1,39 +1,83 @@
 import { Pause, Play } from 'lucide-react';
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { formatWeekdayShort } from '../../../shared/dates';
+import { describeSchedule, periodStartOf } from '../../../shared/recurrence';
 import { czechCollator } from '../../../shared/tasks';
-import type { RecurringTask } from '../../../shared/types';
+import type { RecurringTask, Task } from '../../../shared/types';
 import { AddButton, ScreenHeader } from '../../components/AppShell';
+import { Checkbox } from '../../components/controls';
 import { Dialog } from '../../components/Dialog';
 import { PriorityTag, titleClass } from '../../components/TaskRow';
 import { useApp } from '../../lib/appContext';
-import { useRecurring, useRecurringMutations, useRewards } from '../../lib/queries';
+import {
+  useCompletedTasks,
+  useOpenTasks,
+  useRecurring,
+  useRecurringMutations,
+  useRewards,
+  useTaskMutations,
+} from '../../lib/queries';
 import { RecurringForm } from './RecurringForm';
 
 function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: () => void }) {
-  const { listsById, canEdit } = useApp();
+  const { listsById, canEdit, today } = useApp();
   const { update } = useRecurringMutations();
+  const { complete, uncomplete } = useTaskMutations();
+  const { data: openTasks } = useOpenTasks();
+  const { data: completedTasks } = useCompletedTasks();
   const { data: rewards } = useRewards();
+  const list = template.listId ? listsById.get(template.listId) : undefined;
   // Created this week: earns from the next snapshot (SPEC §13.3).
   const earnsFromMonday =
     rewards?.started && template.active && !rewards.weekly[template.id]?.inSnapshot;
-  const list = template.listId ? listsById.get(template.listId) : undefined;
-  const schedule =
-    template.mode === 'fixed' && template.weekday
-      ? `Every ${formatWeekdayShort(template.weekday)}`
-      : 'Any day';
+
+  // This week's or month's tasks of the template (SPEC §6.1).
+  const periodStart = periodStartOf(template.period, today);
+  const inPeriod = (task: Task) =>
+    task.recurringId === template.id && task.weekStart === periodStart;
+  const open = (openTasks ?? [])
+    .filter(inPeriod)
+    .sort((a, b) => a.deadline.localeCompare(b.deadline));
+  const done = (completedTasks ?? [])
+    .filter(inPeriod)
+    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
+  const total = open.length + done.length;
+  const checked = total > 0 && open.length === 0;
+  const periodName = template.period === 'month' ? 'this month' : 'this week';
+
+  function toggle() {
+    if (open[0]) complete.mutate(open[0]);
+    else if (done[0]) uncomplete.mutate(done[0].id);
+  }
+
   return (
     <li className={template.active ? 'task-row' : 'task-row is-paused'}>
-      <span
-        className="template-ring"
-        style={{ '--check-color': list?.color ?? 'var(--no-list)' } as CSSProperties}
-        aria-hidden="true"
+      <Checkbox
+        checked={checked}
+        color={list?.color ?? null}
+        label={
+          total === 0
+            ? `No “${template.title}” task ${periodName}`
+            : checked
+              ? `Bring back “${template.title}” for ${periodName}`
+              : `Complete “${template.title}” for ${periodName}`
+        }
+        disabled={!canEdit || total === 0}
+        onChange={toggle}
       />
       <button type="button" className="task-row__main" onClick={onOpen}>
         <span className={titleClass(template.priority)}>{template.title}</span>
         <span className="task-row__meta">
           <PriorityTag priority={template.priority} />
-          <span>{schedule}</span>
+          <span>{describeSchedule(template, formatWeekdayShort)}</span>
+          {template.period === 'month' && total > 0 && (
+            <span>
+              <span className="mono">
+                {done.length}/{total}
+              </span>{' '}
+              {periodName}
+            </span>
+          )}
           {list && <span>{list.name}</span>}
           {!template.active && <span className="paused-tag">Paused</span>}
           {earnsFromMonday && <span>Earns from Mon</span>}
@@ -59,30 +103,38 @@ function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: ()
 
 const byWeekdayThenTitle = (a: RecurringTask, b: RecurringTask) =>
   (a.weekday ?? 0) - (b.weekday ?? 0) || czechCollator.compare(a.title, b.title);
+const byTitle = (a: RecurringTask, b: RecurringTask) => czechCollator.compare(a.title, b.title);
 
-/** Weekly task templates, grouped by fixed day / any day (SPEC §8.5). */
-export function WeeklyScreen() {
+/** Recurring task templates, grouped by schedule (SPEC §8.5). */
+export function RecurringScreen() {
   const { data: templates } = useRecurring();
   // undefined = closed; null = new template.
   const [editing, setEditing] = useState<RecurringTask | null | undefined>(undefined);
-  const fixed = (templates ?? []).filter((t) => t.mode === 'fixed').sort(byWeekdayThenTitle);
-  const flexible = (templates ?? [])
-    .filter((t) => t.mode === 'flexible')
-    .sort((a, b) => czechCollator.compare(a.title, b.title));
+  const all = templates ?? [];
+  const groups = [
+    {
+      title: 'Weekly on a set day',
+      items: all.filter((t) => t.period === 'week' && t.mode === 'fixed').sort(byWeekdayThenTitle),
+    },
+    {
+      title: 'Weekly, any day',
+      items: all.filter((t) => t.period === 'week' && t.mode === 'flexible').sort(byTitle),
+    },
+    { title: 'Monthly', items: all.filter((t) => t.period === 'month').sort(byTitle) },
+  ];
 
   return (
     <>
       <ScreenHeader
-        title="Weekly"
-        actions={<AddButton label="Add weekly task" onClick={() => setEditing(null)} />}
+        title="Recurring"
+        actions={<AddButton label="Add recurring task" onClick={() => setEditing(null)} />}
       />
       {templates && templates.length === 0 && (
-        <p className="empty">No weekly tasks yet. Add one that should come back every week.</p>
+        <p className="empty">
+          No recurring tasks yet. Add one that should come back every week or month.
+        </p>
       )}
-      {[
-        { title: 'On a set day', items: fixed },
-        { title: 'Any day of the week', items: flexible },
-      ]
+      {groups
         .filter((group) => group.items.length > 0)
         .map((group) => (
           <section key={group.title} className="section">
@@ -105,7 +157,7 @@ export function WeeklyScreen() {
       <Dialog
         open={editing !== undefined}
         onClose={() => setEditing(undefined)}
-        title={editing ? 'Edit weekly task' : 'New weekly task'}
+        title={editing ? 'Edit recurring task' : 'New recurring task'}
         hideTitle
       >
         {editing !== undefined && (

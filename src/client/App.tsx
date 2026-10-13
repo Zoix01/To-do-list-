@@ -9,7 +9,7 @@ import { AllTasksScreen } from './screens/AllTasksScreen';
 import { CompletedScreen } from './screens/CompletedScreen';
 import { HabitDetailScreen } from './screens/habits/HabitDetailScreen';
 import { HabitsScreen } from './screens/habits/HabitsScreen';
-import { WeeklyScreen } from './screens/weekly/WeeklyScreen';
+import { RecurringScreen } from './screens/recurring/RecurringScreen';
 import { ListsScreen } from './screens/ListsScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -30,7 +30,9 @@ const SCREENS: Record<string, ComponentType> = {
   '/lists': ListsScreen,
   '/settings': SettingsScreen,
   '/habits': HabitsScreen,
-  '/weekly': WeeklyScreen,
+  '/recurring': RecurringScreen,
+  // Old address of the screen, before monthly tasks (SPEC §6.1).
+  '/weekly': RecurringScreen,
 };
 
 function Screen() {

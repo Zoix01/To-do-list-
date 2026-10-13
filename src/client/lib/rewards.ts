@@ -1,5 +1,5 @@
 import { formatStreak } from '../../shared/habits';
-import { snapshotValues, type EconomyItem } from '../../shared/rewards';
+import { snapshotValues, templateRules, type EconomyItem } from '../../shared/rewards';
 import type {
   EarnedReward,
   HabitFrequency,
@@ -63,7 +63,7 @@ export function nextWeekValue(
         type: 'weekly' as const,
         id: template.id,
         weight: template.weight,
-        rules: null,
+        rules: templateRules(template),
       })),
   ];
   return snapshotValues([...others, item], budget).get(`${item.type}:${item.id}`) ?? 0;

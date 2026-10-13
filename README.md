@@ -4,7 +4,7 @@ A personal task planner for one person. Tasks have a required **deadline** and a
 
 Each deployment is single-user: you deploy your own copy and protect it with your own password.
 
-> Status: Phases 1–4 are done: tasks and lists, Today, All tasks, Completed, a calendar with drag-to-plan, weekly tasks, habits with streaks, read-only offline use, and a Claude connector. See [SPEC.md](SPEC.md).
+> Status: Phases 1–4 are done: tasks and lists, Today, All tasks, Completed, a calendar with drag-to-plan, weekly and monthly recurring tasks, habits with streaks, read-only offline use, and a Claude connector. See [SPEC.md](SPEC.md).
 
 | Today | Calendar |
 |---|---|
@@ -22,8 +22,8 @@ _Screenshots use made-up sample data. A new installation starts empty._
 ## How it works
 
 - **One Cloudflare Worker** serves the React app as static files and runs the API under `/api`, so everything is on one origin.
-- **Cloudflare D1** (SQLite) stores lists, tasks, weekly templates, habits and sessions. Migrations live in `migrations/`.
-- **Weekly tasks** are created lazily when the app loads, one per template per week, so no scheduled job is needed.
+- **Cloudflare D1** (SQLite) stores lists, tasks, recurring templates, habits and sessions. Migrations live in `migrations/`.
+- **Recurring tasks** (weekly or monthly) are created lazily when the app loads, once per template per week or month, so no scheduled job is needed.
 - **Login** uses one password. Its PBKDF2 hash is stored as a Worker secret, never in the database or in this repo. After logging in, a device stays logged in for a year, and the session renews itself whenever you use it.
 - **Offline** the app shows your last loaded data read-only. Changes need a connection.
 - **Claude connector:** the same Worker serves an OAuth-protected MCP endpoint at `/mcp` ([Cloudflare's OAuth provider](https://github.com/cloudflare/workers-oauth-provider) plus the MCP SDK). Connections and tokens live in a KV namespace (`OAUTH_KV`). Claude follows the same task rules as the app.

@@ -35,7 +35,7 @@ const MAIN_NAV = [
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/tasks', label: 'All tasks', icon: ListTodo },
   { to: '/habits', label: 'Habits', icon: Sprout },
-  { to: '/weekly', label: 'Weekly', icon: Repeat },
+  { to: '/recurring', label: 'Recurring', icon: Repeat },
 ];
 
 export function useIsDesktop(): boolean {

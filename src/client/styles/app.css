@@ -626,30 +626,13 @@
   color: var(--warning);
 }
 
-/* Weekly templates: a ring marker (templates can't be ticked off). */
-.template-ring {
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  margin: 0 9px;
-  border: 2px solid var(--check-color);
-  border-radius: 50%;
-}
-
-.task-row.is-paused .task-row__title,
-.task-row.is-paused .template-ring {
+.task-row.is-paused .task-row__title {
   opacity: 0.55;
 }
 
 .paused-tag {
   color: var(--text);
   font-weight: var(--weight-medium);
-}
-
-@media (pointer: coarse) {
-  .template-ring {
-    margin: 0 15px;
-  }
 }
 
 .weekly-mark {
@@ -1266,5 +1249,34 @@ body:has(.app--phone) .toast-region {
   border: 0;
   background: transparent;
   color: var(--accent);
+  font-weight: var(--weight-medium);
+}
+
+/* Monthly recurring tasks: a 7-column grid of days 1–31. */
+.month-day-picker {
+  display: grid;
+  grid-template-columns: repeat(7, 32px);
+  gap: var(--space-1);
+}
+
+.month-day-picker__day {
+  height: 32px;
+  padding: 0;
+  border: var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.month-day-picker__day:hover:not(:disabled, [aria-checked='true']) {
+  background: var(--surface);
+}
+
+.month-day-picker__day[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
   font-weight: var(--weight-medium);
 }

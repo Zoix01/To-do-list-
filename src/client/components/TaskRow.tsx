@@ -25,12 +25,12 @@ export function PriorityTag({ priority }: { priority: Priority }) {
   );
 }
 
-/** Small repeat icon on tasks created by a weekly template (SPEC §6). */
+/** Small repeat icon on tasks created by a recurring template (SPEC §6). */
 export function WeeklyMark() {
   return (
-    <span className="weekly-mark" title="Weekly task">
+    <span className="weekly-mark" title="Recurring task">
       <Repeat size={13} aria-hidden="true" />
-      <span className="visually-hidden">Weekly task</span>
+      <span className="visually-hidden">Recurring task</span>
     </span>
   );
 }

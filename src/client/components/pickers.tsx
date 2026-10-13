@@ -151,3 +151,34 @@ export function WeekdayPicker({
     </div>
   );
 }
+
+/** Days of the month, 1–31, several can be chosen (monthly recurring tasks, SPEC §6.1). */
+export function MonthDayPicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: number[];
+  onChange: (days: number[]) => void;
+  disabled?: boolean;
+}) {
+  const toggle = (day: number) =>
+    onChange(value.includes(day) ? value.filter((d) => d !== day) : [...value, day]);
+  return (
+    <div className="month-day-picker" role="group" aria-label="Days of the month">
+      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+        <button
+          key={day}
+          type="button"
+          role="checkbox"
+          aria-checked={value.includes(day)}
+          className="month-day-picker__day"
+          onClick={() => toggle(day)}
+          disabled={disabled}
+        >
+          {day}
+        </button>
+      ))}
+    </div>
+  );
+}
