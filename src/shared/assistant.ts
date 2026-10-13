@@ -1,5 +1,5 @@
 import { addDays, dateInZone, daysBetween, isISODate } from './dates';
-import { bestStreak, currentStreak, habitProgress, isDueToday } from './habits';
+import { bestStreak, currentStreak, habitProgress, isDueToday, marksOf } from './habits';
 import { compareByDeadline, czechCollator, isPlannedAfterDeadline, taskFlag } from './tasks';
 import type { HabitWithChecks, ISODate, List, Priority, Task, TaskFlag, Weekday } from './types';
 
@@ -157,17 +157,22 @@ export interface AssistantHabit {
   progress: string | null;
 }
 
-export function assistantHabit(habit: HabitWithChecks, today: ISODate): AssistantHabit {
+export function assistantHabit(
+  habit: HabitWithChecks,
+  today: ISODate,
+  vacation: ISODate[] = [],
+): AssistantHabit {
   const checks = new Set(habit.checks);
-  const progress = habitProgress(habit, checks, today);
+  const marks = marksOf(habit, vacation);
+  const progress = habitProgress(habit, checks, today, marks);
   return {
     name: habit.name,
     frequency: describeFrequency(habit),
     archived: habit.archived,
-    currentStreak: currentStreak(habit, checks, today),
-    bestStreak: bestStreak(habit, checks, today),
+    currentStreak: currentStreak(habit, checks, today, marks),
+    bestStreak: bestStreak(habit, checks, today, marks),
     streakUnit: STREAK_UNIT[habit.frequency],
-    dueToday: isDueToday(habit, checks, today),
+    dueToday: isDueToday(habit, checks, today, marks),
     doneToday: checks.has(today),
     progress: progress ? `${progress.done}/${progress.target} ${progress.label}` : null,
   };

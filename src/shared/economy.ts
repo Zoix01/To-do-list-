@@ -77,3 +77,16 @@ export const LEVEL_XP_BASE = 600;
 export const LEVEL_XP_STEP = 100;
 /** Mystery boxes per level-up (13.5). */
 export const BOXES_PER_LEVEL = 1;
+
+/** Mystery box price = TYPICAL_WEEK × BOX_PRICE_SHARE / BOXES_PER_TYPICAL_WEEK (13.6). */
+export const BOX_PRICE_SHARE = 0.35;
+export const BOXES_PER_TYPICAL_WEEK = 4;
+/** Other prices as a multiple of the box price (13.6). */
+export const FREEZE_PRICE_IN_BOXES = 1;
+export const VACATION_PRICE_IN_BOXES = 0.5;
+export const COSMETIC_PRICE_IN_BOXES = 3;
+/** A purchase can be undone this long after buying (the toast shows for 5 s; 13.18). */
+export const REFUND_WINDOW_SECONDS = 30;
+/** Price range of a real-life reward (13.6). */
+export const REWARD_PRICE_MIN = 1;
+export const REWARD_PRICE_MAX = 1_000_000;

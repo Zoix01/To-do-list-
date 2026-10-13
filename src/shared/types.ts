@@ -1,3 +1,5 @@
+import type { RewardIcon } from './shop';
+
 /** Calendar date as `YYYY-MM-DD`, no time. */
 export type ISODate = string;
 
@@ -117,6 +119,10 @@ export interface Habit {
 /** A habit as sent by the API: with the dates it was ticked on. */
 export interface HabitWithChecks extends Habit {
   checks: ISODate[];
+  /** Periods covered by a streak freeze (period starts, SPEC §13.9). */
+  frozen: ISODate[];
+  /** Streak freezes armed on this habit, waiting for a miss. */
+  armedFreezes: number;
 }
 
 /** Settings → Claude connector (SPEC §9.1). */
@@ -133,7 +139,8 @@ export interface Me {
 // ---------------------------------------------------------------- Gamification (SPEC §13)
 
 export type InventoryItemType = 'box' | 'freeze' | 'vacation' | 'charm' | 'reward';
-export type InventoryStatus = 'owned' | 'armed' | 'scheduled' | 'used' | 'opened' | 'consumed';
+export type InventoryStatus =
+  'owned' | 'armed' | 'scheduled' | 'used' | 'opened' | 'consumed' | 'refunded';
 export type InventorySource = 'purchase' | 'box' | 'milestone' | 'level';
 
 /** What a habit or weekly task earns right now (Habits and Weekly screens). */
@@ -162,6 +169,11 @@ export interface RewardsSummary {
   week: { start: ISODate; earned: number; budget: number };
   /** Budget of the next snapshot, for the "≈ 330 coins per tick from Monday" hints. */
   nextBudget: number;
+  /** Typical week and current shop prices (13.6). */
+  economy: { weeklyBudget: number; expectedRate: number };
+  prices: { box: number; freeze: number; vacation: number; cosmetic: number };
+  /** Vacation days, past and planned: all habits are paused on them (13.9). */
+  vacationDays: ISODate[];
   habits: Record<string, ItemRewardInfo>;
   weekly: Record<string, ItemRewardInfo>;
 }
@@ -173,4 +185,49 @@ export interface EarnedReward {
   milestones: { kind: 'streak' | 'count'; threshold: number; boxes: number }[];
   /** Levels reached by this reward. */
   levelUps: number[];
+}
+
+/** A real-life reward I defined (SPEC §13.6). */
+export interface ShopReward {
+  id: string;
+  name: string;
+  price: number;
+  icon: RewardIcon;
+  sortOrder: number;
+  archived: boolean;
+  createdAt: Timestamp;
+}
+
+export interface InventoryItem {
+  id: string;
+  type: InventoryItemType;
+  status: InventoryStatus;
+  /**
+   * freeze: { habitId, armedOn } while armed, plus periodStart once used;
+   * vacation: { date } once scheduled; reward: { rewardId, name, price, icon }.
+   */
+  payload: Record<string, unknown> | null;
+  source: InventorySource;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/** One line of the History (SPEC §13.10), newest first. */
+export interface HistoryEntry {
+  key: string;
+  kind: 'ticks' | 'weekly' | 'streak' | 'count' | 'level' | 'buy' | 'refund' | 'use';
+  /** The day it belongs to. */
+  date: ISODate;
+  createdAt: Timestamp;
+  coins: number;
+  boxes: number;
+  /** Habit, recurring task or item name, when there is one. */
+  name: string | null;
+  /** e.g. { threshold: 50 }, { level: 4 }, { action: 'arm', item: 'freeze' }, { count: 3 } */
+  detail: Record<string, unknown> | null;
+}
+
+export interface InventoryView {
+  items: InventoryItem[];
+  history: HistoryEntry[];
 }

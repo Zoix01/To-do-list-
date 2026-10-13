@@ -11,7 +11,7 @@ import {
   STREAK_MILESTONES,
   XP_PER_COIN,
 } from './economy';
-import { isScheduled, runsAround, streakBefore } from './habits';
+import { isScheduled, NO_MARKS, runsAround, streakBefore, type HabitMarks } from './habits';
 import { tasksPerPeriod } from './recurrence';
 import type { Habit, ISODate, RecurringTask } from './types';
 
@@ -194,6 +194,8 @@ export interface TickPayInput {
   paidInPeriod: number;
   /** The one-time catch-up ignores the back-fill limit (13.2). */
   catchUp?: boolean;
+  /** Freezes and vacation days: they keep a streak without adding to it (13.9). */
+  marks?: HabitMarks;
 }
 
 /** Coins a tick on `date` pays, with its multiplier; null when it pays nothing (13.4). */
@@ -203,11 +205,12 @@ export function tickPay(input: TickPayInput): { coins: number; multiplier: numbe
   if (!input.catchUp && !isPaidTickDate(date, input.today)) return null;
   // A weekdays habit's day off isn't part of its week (completionsPerWeek), so it doesn't pay.
   if (!isScheduled(rules, date)) return null;
+  // The cap is the full target: vacation days lower what a streak needs, not what can be earned.
   if (targetPeriodStart(rules, date) && input.paidInPeriod >= Math.max(1, rules.target ?? 1)) {
     return null;
   }
   const multiplier = streakMultiplier(
-    fullStreakPeriods(rules, streakBefore(rules, input.checks, date)),
+    fullStreakPeriods(rules, streakBefore(rules, input.checks, date, input.marks ?? NO_MARKS)),
   );
   return { coins: roundTo(input.value * multiplier, COIN_ROUNDING), multiplier };
 }
@@ -231,9 +234,10 @@ export function tickReward(input: TickRewardInput): Reward {
   const milestones: Milestone[] = [];
 
   // Streak milestones: thresholds this tick takes the run past, once per run (keyed by its start).
-  const after = runsAround(rules, checks, date, input.today);
+  const marks = input.marks ?? NO_MARKS;
+  const after = runsAround(rules, checks, date, input.today, marks);
   if (after.run) {
-    const before = runsAround(rules, checksBefore, date, input.today);
+    const before = runsAround(rules, checksBefore, date, input.today, marks);
     const lengthBefore = before.run ? before.run.length : Math.max(before.before, before.after);
     for (const [threshold, boxes] of STREAK_MILESTONES[rules.frequency]) {
       if (lengthBefore < threshold && threshold <= after.run.length) {
@@ -303,7 +307,8 @@ export function levelInfo(xp: number): LevelInfo {
 
 // ---------------------------------------------------------------- Ledger entries
 
-export type LedgerKind = 'tick' | 'weekly' | 'streak' | 'count' | 'level';
+export type LedgerKind =
+  'tick' | 'weekly' | 'streak' | 'count' | 'level' | 'buy' | 'refund' | 'use';
 
 export interface LedgerEntry {
   key: string;

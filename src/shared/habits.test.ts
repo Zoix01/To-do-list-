@@ -7,6 +7,8 @@ import {
   habitProgress,
   isDueToday,
   normalizeHabitRules,
+  settleFreezes,
+  streakBefore,
   showOnToday,
 } from './habits';
 import type { Habit, Weekday } from './types';
@@ -223,5 +225,179 @@ describe('normalizeHabitRules', () => {
     expect(normalizeHabitRules({ frequency: 'per_month', target: 31 }).ok).toBe(true);
     expect(normalizeHabitRules({ frequency: 'per_month', target: 0 }).ok).toBe(false);
     expect(normalizeHabitRules({ frequency: 'per_month', target: null }).ok).toBe(false);
+  });
+});
+
+describe('freezes and vacation days (SPEC §13.9)', () => {
+  const marks = (frozen: string[] = [], vacation: string[] = []) => ({
+    frozen: new Set(frozen),
+    vacation: new Set(vacation),
+  });
+  const days = (from: string, to: string) => {
+    const out: string[] = [];
+    for (let d = new Date(from); d <= new Date(to); d.setUTCDate(d.getUTCDate() + 1)) {
+      out.push(d.toISOString().slice(0, 10));
+    }
+    return out;
+  };
+
+  it('a frozen day keeps the streak but doesn’t add to it', () => {
+    const c = checks('2026-10-10', '2026-10-11', '2026-10-13');
+    expect(currentStreak(daily, c, '2026-10-13')).toBe(1);
+    expect(currentStreak(daily, c, '2026-10-13', marks(['2026-10-12']))).toBe(3);
+    expect(bestStreak(daily, c, '2026-10-13', marks(['2026-10-12']))).toBe(3);
+    expect(streakBefore(daily, c, '2026-10-13', marks(['2026-10-12']))).toBe(2);
+  });
+
+  it('a vacation day pauses daily habits, even when ticked', () => {
+    const v = marks([], ['2026-10-12']);
+    expect(
+      currentStreak(daily, checks('2026-10-10', '2026-10-11', '2026-10-13'), '2026-10-13', v),
+    ).toBe(3);
+    expect(
+      currentStreak(
+        daily,
+        checks('2026-10-10', '2026-10-11', '2026-10-12', '2026-10-13'),
+        '2026-10-13',
+        v,
+      ),
+    ).toBe(3);
+  });
+
+  it('on a vacation day nothing is due; ticked habits still show on Today', () => {
+    const v = marks([], [WED]);
+    expect(isDueToday(daily, checks(), WED, v)).toBe(false);
+    expect(showOnToday(daily, checks(), WED, v)).toBe(false);
+    expect(showOnToday(daily, checks(WED), WED, v)).toBe(true);
+  });
+
+  it('per_week: the target drops with vacation days (rounded down); 0 pauses the week', () => {
+    const twoOff = marks([], ['2026-10-12', '2026-10-13']);
+    expect(habitProgress(perWeek(3), checks(), WED, twoOff)?.target).toBe(2); // 3 × 5/7
+    // Week of 5 Oct: 1 tick meets the reduced target (2 × 5/7 → 1); week of 28 Sep met normally.
+    const c = checks('2026-09-29', '2026-09-30', '2026-10-06');
+    const v = marks([], ['2026-10-10', '2026-10-11']);
+    expect(currentStreak(perWeek(2), c, WED, v)).toBe(2);
+    // 1× a week with one vacation day: 1 × 6/7 → 0, the week is paused.
+    const paused = marks([], ['2026-10-08']);
+    expect(currentStreak(perWeek(1), checks('2026-09-29'), WED, paused)).toBe(1);
+  });
+
+  describe('settleFreezes', () => {
+    const tenDays = days('2026-10-01', '2026-10-10');
+    it('covers a missed day after it ends, if armed before', () => {
+      const c = new Set([...tenDays, '2026-10-12']);
+      const result = settleFreezes(
+        daily,
+        c,
+        '2026-10-13',
+        new Set(),
+        [],
+        [{ id: 'f1', armedOn: '2026-10-05' }],
+      );
+      expect(result).toEqual({
+        release: [],
+        consume: [{ freezeId: 'f1', periodStart: '2026-10-11' }],
+      });
+    });
+
+    it('waits until the day is over', () => {
+      const result = settleFreezes(
+        daily,
+        new Set(tenDays),
+        '2026-10-11',
+        new Set(),
+        [],
+        [{ id: 'f1', armedOn: '2026-10-05' }],
+      );
+      expect(result.consume).toEqual([]);
+    });
+
+    it('armed after the miss: doesn’t repair the streak', () => {
+      const result = settleFreezes(
+        daily,
+        new Set(tenDays),
+        '2026-10-13',
+        new Set(),
+        [],
+        [{ id: 'f1', armedOn: '2026-10-12' }],
+      );
+      // Oct 11 was missed before arming; Oct 12 is missed too but the streak is already 0.
+      expect(result.consume).toEqual([]);
+    });
+
+    it('arming on the missed day itself still counts', () => {
+      const result = settleFreezes(
+        daily,
+        new Set(tenDays),
+        '2026-10-12',
+        new Set(),
+        [],
+        [{ id: 'f1', armedOn: '2026-10-11' }],
+      );
+      expect(result.consume).toEqual([{ freezeId: 'f1', periodStart: '2026-10-11' }]);
+    });
+
+    it('nothing to protect: the freeze stays armed', () => {
+      const result = settleFreezes(
+        daily,
+        new Set(['2026-09-01']),
+        '2026-10-13',
+        new Set(),
+        [],
+        [{ id: 'f1', armedOn: '2026-10-01' }],
+      );
+      expect(result.consume).toEqual([]);
+    });
+
+    it('two missed days use two freezes, oldest first', () => {
+      const result = settleFreezes(
+        daily,
+        new Set(tenDays),
+        '2026-10-13',
+        new Set(),
+        [],
+        [
+          { id: 'new', armedOn: '2026-10-08' },
+          { id: 'old', armedOn: '2026-10-02' },
+        ],
+      );
+      expect(result.consume.map((c) => c.freezeId)).toEqual(['old', 'new']);
+      expect(result.consume.map((c) => c.periodStart)).toEqual(['2026-10-11', '2026-10-12']);
+    });
+
+    it('a back-filled frozen day releases its freeze', () => {
+      const c = new Set([...tenDays, '2026-10-11', '2026-10-12']);
+      const result = settleFreezes(
+        daily,
+        c,
+        '2026-10-13',
+        new Set(),
+        [{ id: 'f1', armedOn: '2026-10-05', periodStart: '2026-10-11' }],
+        [],
+      );
+      expect(result).toEqual({ release: ['f1'], consume: [] });
+    });
+
+    it('vacation days don’t use freezes', () => {
+      const result = settleFreezes(
+        daily,
+        new Set(tenDays),
+        '2026-10-12',
+        new Set(['2026-10-11']),
+        [],
+        [{ id: 'f1', armedOn: '2026-10-05' }],
+      );
+      expect(result.consume).toEqual([]);
+    });
+
+    it('per_week: a week below target uses a freeze after it ends', () => {
+      const c = checks('2026-09-29', '2026-10-01', '2026-10-06'); // week of 5 Oct: 1 of 2
+      const armed = [{ id: 'f1', armedOn: '2026-09-30' }];
+      expect(settleFreezes(perWeek(2), c, '2026-10-11', new Set(), [], armed).consume).toEqual([]);
+      expect(settleFreezes(perWeek(2), c, '2026-10-12', new Set(), [], armed).consume).toEqual([
+        { freezeId: 'f1', periodStart: '2026-10-05' },
+      ]);
+    });
   });
 });
