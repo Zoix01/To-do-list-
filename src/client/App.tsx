@@ -9,6 +9,7 @@ import { AllTasksScreen } from './screens/AllTasksScreen';
 import { CompletedScreen } from './screens/CompletedScreen';
 import { HabitDetailScreen } from './screens/habits/HabitDetailScreen';
 import { HabitsScreen } from './screens/habits/HabitsScreen';
+import { GalleryScreen } from './screens/habits/GalleryScreen';
 import { InventoryScreen } from './screens/habits/InventoryScreen';
 import { ManageRewardsScreen } from './screens/habits/ManageRewardsScreen';
 import { ShopScreen } from './screens/habits/ShopScreen';
@@ -36,6 +37,7 @@ const SCREENS: Record<string, ComponentType> = {
   '/habits/shop': ShopScreen,
   '/habits/shop/rewards': ManageRewardsScreen,
   '/habits/inventory': InventoryScreen,
+  '/habits/gallery': GalleryScreen,
   '/recurring': RecurringScreen,
   // Old address of the screen, before monthly tasks (SPEC §6.1).
   '/weekly': RecurringScreen,

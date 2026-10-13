@@ -1,4 +1,4 @@
-import { Package, Snowflake, TreePalm } from 'lucide-react';
+import { Clover, Package, Snowflake, TreePalm } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { dateInZone, formatShortDate } from '../../../shared/dates';
 import { formatStreak } from '../../../shared/habits';
@@ -10,6 +10,7 @@ import { useApp } from '../../lib/appContext';
 import { useHabits, useInventory, useInventoryMutations } from '../../lib/queries';
 import { RewardIconView } from '../../lib/rewardIcons';
 import { formatBoxes, formatCoins } from '../../lib/rewards';
+import { BoxOpenDialog } from './BoxOpenDialog';
 import { HabitsNav } from './HabitsNav';
 import './habits.css';
 
@@ -120,6 +121,16 @@ function VacationDialog({ item, onClose }: { item: InventoryItem | null; onClose
   );
 }
 
+const BOX_RESULTS: Record<string, (entry: HistoryEntry) => string> = {
+  piece: (e) => `${String(e.detail?.tier)} piece${e.detail?.duplicate ? ' (duplicate)' : ''}`,
+  pouch: () => 'coin pouch',
+  charm: () => 'lucky charm',
+  freeze: () => 'streak freeze',
+  vacation: () => 'vacation day',
+  reward: (e) => e.name ?? 'real-life reward',
+  cosmetic: () => 'cosmetic',
+};
+
 const ACTIONS: Record<string, (entry: HistoryEntry) => string> = {
   arm: (e) => `Freeze armed on ${e.name ?? 'a habit'}`,
   unarm: (e) => `Freeze taken back from ${e.name ?? 'a habit'}`,
@@ -129,6 +140,7 @@ const ACTIONS: Record<string, (entry: HistoryEntry) => string> = {
   vacation: (e) => `Vacation day planned for ${formatShortDate(String(e.detail?.date))}`,
   vacation_cancelled: (e) => `Vacation day on ${formatShortDate(String(e.detail?.date))} cancelled`,
   reward_used: (e) => `Used ${e.name ?? 'a reward'}`,
+  charm: () => 'Lucky charm activated',
 };
 
 /** One History line: what happened, and coins or boxes gained or spent. */
@@ -153,6 +165,10 @@ function historyText(entry: HistoryEntry): string {
       return `Undid buying ${entry.name ?? 'an item'}`;
     case 'use':
       return ACTIONS[String(entry.detail?.action)]?.(entry) ?? 'Used an item';
+    case 'box':
+      return `Mystery box: ${BOX_RESULTS[String(entry.detail?.type)]?.(entry) ?? 'opened'}`;
+    case 'shards':
+      return `Bought a ${String(entry.detail?.tier ?? '')} piece with shards`;
   }
 }
 
@@ -171,6 +187,13 @@ function History({ entries }: { entries: HistoryEntry[] }) {
                 {formatCoins(Math.abs(entry.coins))}
               </span>
             )}
+            {entry.shards !== 0 && (
+              <span className={entry.shards > 0 ? 'is-gain' : undefined}>
+                {' '}
+                {entry.shards > 0 ? '+' : '−'}
+                {Math.abs(entry.shards)} shards
+              </span>
+            )}
             {entry.boxes > 0 && <span className="muted"> {formatBoxes(entry.boxes)}</span>}
           </span>
         </li>
@@ -184,7 +207,8 @@ export function InventoryScreen() {
   const { today, timeZone, canEdit } = useApp();
   const { data: inventory } = useInventory();
   const { data: habits } = useHabits();
-  const { unarm, cancelVacation, useReward } = useInventoryMutations();
+  const { unarm, cancelVacation, useReward, useCharm } = useInventoryMutations();
+  const [openingBox, setOpeningBox] = useState<string | null>(null);
   const [arming, setArming] = useState<InventoryItem | null>(null);
   const [planning, setPlanning] = useState<InventoryItem | null>(null);
   const items = inventory?.items ?? [];
@@ -200,6 +224,9 @@ export function InventoryScreen() {
     String(a.payload?.date).localeCompare(String(b.payload?.date)),
   );
   const rewards = of('reward', 'owned');
+  const charms = of('charm', 'owned');
+  const activeCharm = of('charm', 'armed')[0];
+  const nextBox = boxes.find((box) => box.id !== openingBox);
   const empty = inventory && items.length === 0;
 
   return (
@@ -221,7 +248,16 @@ export function InventoryScreen() {
               icon={<Package size={18} aria-hidden="true" />}
               name="Mystery box"
               count={boxes.length}
-              note="Opening boxes comes with the Gallery"
+              action={
+                <button
+                  type="button"
+                  className="button"
+                  disabled={!canEdit}
+                  onClick={() => setOpeningBox(boxes[0]!.id)}
+                >
+                  Open
+                </button>
+              }
             />
           </ul>
         </section>
@@ -317,6 +353,40 @@ export function InventoryScreen() {
         </section>
       )}
 
+      {(charms.length > 0 || activeCharm) && (
+        <section className="section">
+          <h2 className="section__title">Lucky charms</h2>
+          <ul className="shop-list">
+            {activeCharm && (
+              <ItemRow
+                icon={<Clover size={18} aria-hidden="true" className="is-armed" />}
+                name="Lucky charm active"
+                note="Your next box gives a piece you don’t have yet"
+              />
+            )}
+            {charms.length > 0 && (
+              <ItemRow
+                icon={<Clover size={18} aria-hidden="true" />}
+                name="Lucky charm"
+                count={charms.length}
+                note="Makes the next box an art piece you don’t have yet"
+                action={
+                  <button
+                    type="button"
+                    className="button"
+                    disabled={!canEdit || Boolean(activeCharm)}
+                    title={activeCharm ? 'A lucky charm is already active' : undefined}
+                    onClick={() => useCharm.mutate(charms[0]!.id)}
+                  >
+                    Use
+                  </button>
+                }
+              />
+            )}
+          </ul>
+        </section>
+      )}
+
       {rewards.length > 0 && (
         <section className="section">
           <h2 className="section__title">Real-life rewards</h2>
@@ -349,6 +419,11 @@ export function InventoryScreen() {
       </section>
 
       <ArmDialog freeze={arming} onClose={() => setArming(null)} />
+      <BoxOpenDialog
+        boxId={openingBox}
+        onClose={() => setOpeningBox(null)}
+        onAnother={nextBox ? () => setOpeningBox(nextBox.id) : null}
+      />
       <VacationDialog
         key={planning?.id ?? 'none'}
         item={planning}

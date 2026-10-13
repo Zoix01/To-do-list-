@@ -35,6 +35,14 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}'],
         navigateFallback: '/index.html',
+        // Season art is too big to precache; each image is kept once it has been seen.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/art/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'art', expiration: { maxEntries: 40 } },
+          },
+        ],
         // Server routes, not app pages: the API and the Claude connector's OAuth pages.
         navigateFallbackDenylist: [
           /^\/api\//,

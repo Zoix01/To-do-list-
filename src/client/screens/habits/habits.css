@@ -591,3 +591,239 @@
 .history__amount .is-gain {
   color: var(--accent);
 }
+
+/* ---------------------------------------------------------------- Gallery (SPEC §13.10, §13.13) */
+
+.gallery-season__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.gallery-season__name {
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
+}
+
+.gallery-season__artworks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.artwork {
+  margin: 0;
+}
+
+.artwork__grid {
+  display: grid;
+  gap: 2px;
+}
+
+.artwork__caption {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.artwork__cell {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.art-piece {
+  display: block;
+  width: 100%;
+  background-color: var(--surface);
+  background-repeat: no-repeat;
+}
+
+.art-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 0;
+  border: 1px solid var(--tier-color);
+  background: var(--surface);
+  --tier-color: var(--rarity-common);
+}
+
+.art-missing--rare {
+  --tier-color: var(--rarity-rare);
+}
+
+.art-missing--legendary {
+  --tier-color: var(--rarity-legendary);
+}
+
+.art-missing__tier {
+  color: var(--tier-color);
+  font-size: 11px;
+}
+
+.art-missing__buy {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px var(--space-1);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.art-missing__buy:hover:not(:disabled) {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.art-missing__buy:disabled {
+  opacity: 0.6;
+}
+
+.artwork-full {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.artwork-full__image {
+  max-width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+}
+
+.artwork-full figcaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- Opening a box (SPEC §13.11) */
+
+.box-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  padding: var(--space-4) 0;
+}
+
+.box-open__box {
+  color: var(--text-muted);
+  animation: box-shake 450ms ease-in-out infinite;
+}
+
+@keyframes box-shake {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-7deg) translateY(-2px);
+  }
+  75% {
+    transform: rotate(7deg) translateY(-2px);
+  }
+}
+
+.box-reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  --tier-color: var(--text);
+  animation: box-flip 420ms var(--ease-out);
+}
+
+.box-reveal--common {
+  --tier-color: var(--rarity-common);
+}
+
+.box-reveal--rare {
+  --tier-color: var(--rarity-rare);
+}
+
+.box-reveal--legendary {
+  --tier-color: var(--rarity-legendary);
+}
+
+@keyframes box-flip {
+  0% {
+    opacity: 0;
+    transform: perspective(600px) rotateY(90deg) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(600px) rotateY(0) scale(1);
+  }
+}
+
+.box-reveal__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  min-height: 96px;
+  padding: var(--space-2);
+  border: 2px solid var(--tier-color);
+  border-radius: var(--radius-dialog);
+  color: var(--tier-color);
+}
+
+/* The only glow in the app: legendary reveals (SPEC §13.11). */
+.box-reveal--legendary .box-reveal__visual {
+  box-shadow: 0 0 24px color-mix(in srgb, var(--rarity-legendary) 45%, transparent);
+}
+
+.box-reveal__piece {
+  width: 180px;
+}
+
+.box-reveal__title {
+  color: var(--tier-color);
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
+}
+
+.box-reveal--item .box-reveal__title {
+  color: var(--text);
+}
+
+.box-reveal__note {
+  max-width: 280px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box-open__box {
+    animation: none !important;
+  }
+  .box-reveal {
+    animation: reward-fade 300ms linear !important;
+  }
+}
+
+/* Portrait artworks are narrower, so they don't tower over landscape ones. */
+.artwork--portrait {
+  max-width: 62%;
+}
+
+/* A completed artwork is shown whole, without the cut lines. */
+.artwork.is-complete .artwork__grid {
+  gap: 0;
+}

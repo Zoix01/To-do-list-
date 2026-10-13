@@ -5,9 +5,10 @@ const TABS = [
   { to: '/habits', label: 'Habits' },
   { to: '/habits/shop', label: 'Shop' },
   { to: '/habits/inventory', label: 'Inventory' },
+  { to: '/habits/gallery', label: 'Gallery' },
 ];
 
-/** Habits · Shop · Inventory, plus the rewards header, on every Habits sub-screen (SPEC §13.10). */
+/** Habits · Shop · Inventory · Gallery, plus the rewards header, on every Habits sub-screen (SPEC §13.10). */
 export function HabitsNav() {
   const { location } = useRouter();
   const path = location.pathname;

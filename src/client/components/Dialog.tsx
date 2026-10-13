@@ -6,8 +6,11 @@ interface DialogProps {
   /** Accessible name; shown as the dialog heading unless `hideTitle`. */
   title: string;
   hideTitle?: boolean;
-  /** "sheet" slides up from the bottom on phones; "drawer" comes in from the left. */
-  variant?: 'sheet' | 'drawer';
+  /**
+   * "sheet" slides up from the bottom on phones; "drawer" comes in from the left;
+   * "full" nearly fills the screen (an artwork).
+   */
+  variant?: 'sheet' | 'drawer' | 'full';
   children: ReactNode;
 }
 

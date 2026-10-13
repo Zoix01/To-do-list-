@@ -1297,3 +1297,10 @@ body:has(.app--phone) .toast-region {
   color: var(--on-accent);
   font-weight: var(--weight-medium);
 }
+
+/* A large dialog for viewing an artwork. */
+.dialog--full {
+  width: min(96vw, 1100px);
+  max-width: none;
+  max-height: 94vh;
+}

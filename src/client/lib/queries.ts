@@ -19,8 +19,10 @@ import type {
   Me,
   Priority,
   RecurringTask,
+  BoxOpening,
   InventoryItem,
   InventoryView,
+  OwnedPiece,
   RewardsSummary,
   ShopReward,
   Task,
@@ -41,6 +43,7 @@ export const keys = {
   rewards: ['rewards'] as const,
   shopRewards: ['shop', 'rewards'] as const,
   inventory: ['inventory'] as const,
+  gallery: ['gallery'] as const,
 };
 
 /** Wallet, level and what each habit / weekly task earns (SPEC §13.10). */
@@ -62,6 +65,11 @@ export function useShopRewards() {
   });
 }
 
+/** Owned art pieces (SPEC §13.13). */
+export function useGallery() {
+  return useQuery({ queryKey: keys.gallery, queryFn: () => api<OwnedPiece[]>('/gallery') });
+}
+
 export function useInventory() {
   return useQuery({ queryKey: keys.inventory, queryFn: () => api<InventoryView>('/inventory') });
 }
@@ -74,6 +82,7 @@ function useInvalidateRewards() {
       queryClient.invalidateQueries({ queryKey: keys.rewards }),
       queryClient.invalidateQueries({ queryKey: keys.inventory }),
       queryClient.invalidateQueries({ queryKey: keys.habits }),
+      queryClient.invalidateQueries({ queryKey: keys.gallery }),
     ]);
 }
 
@@ -92,7 +101,7 @@ export function useShopMutations() {
   /** Buys an item; the toast offers to undo it (SPEC §13.6). */
   const buy = useMutation({
     mutationFn: (input: {
-      item: 'freeze' | 'vacation' | 'reward';
+      item: 'box' | 'freeze' | 'vacation' | 'reward';
       rewardId?: string;
       name: string;
     }) =>
@@ -159,6 +168,10 @@ export function useInventoryMutations() {
     ),
     cancelVacation: useAction((id: string) => api(`/inventory/${id}/cancel`, { method: 'POST' })),
     useReward: useAction((id: string) => api(`/inventory/${id}/use`, { method: 'POST' })),
+    useCharm: useAction((id: string) => api(`/inventory/${id}/charm`, { method: 'POST' })),
+    buyPiece: useAction((pieceId: string) =>
+      api(`/gallery/pieces/${pieceId}/buy`, { method: 'POST' }),
+    ),
   };
 }
 
@@ -475,4 +488,13 @@ export function useListMutations() {
   });
 
   return { create, update, reorder, remove };
+}
+
+/** Opens a box; its stored result comes back for the animation (SPEC §13.7). */
+export function useOpenBox() {
+  const invalidate = useInvalidateRewards();
+  return useMutation({
+    mutationFn: (id: string) => api<BoxOpening>(`/inventory/${id}/open`, { method: 'POST' }),
+    onSettled: invalidate,
+  });
 }

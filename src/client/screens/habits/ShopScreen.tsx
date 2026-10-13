@@ -1,4 +1,4 @@
-import { Coins, Snowflake, TreePalm } from 'lucide-react';
+import { Coins, Package, Snowflake, TreePalm } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ScreenHeader } from '../../components/AppShell';
 import { useApp } from '../../lib/appContext';
@@ -74,6 +74,13 @@ export function ShopScreen() {
         <section className="section">
           <h2 className="section__title">Items</h2>
           <ul className="shop-list">
+            <ShopRow
+              icon={<Package size={18} aria-hidden="true" />}
+              name="Mystery box"
+              note="An art piece, coins or an item; open it in the Inventory"
+              price={prices.box}
+              onBuy={() => buy.mutate({ item: 'box', name: 'Mystery box' })}
+            />
             <ShopRow
               icon={<Snowflake size={18} aria-hidden="true" />}
               name="Streak freeze"

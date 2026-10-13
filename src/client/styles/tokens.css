@@ -18,6 +18,10 @@
   --no-list: var(--text-muted);
   /* Streak freezes and rare art pieces (SPEC §13.9, §13.11) */
   --ice: #6a9fb5;
+  /* Art piece rarity (SPEC §13.11) */
+  --rarity-common: var(--text-muted);
+  --rarity-rare: var(--ice);
+  --rarity-legendary: var(--warning);
 
   /* Typography */
   --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;

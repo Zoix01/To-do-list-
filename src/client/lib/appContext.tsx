@@ -7,6 +7,7 @@ import {
   useLists,
   useOpenTasks,
   useRecurring,
+  useGallery,
   useInventory,
   useRewards,
   useShopRewards,
@@ -35,6 +36,7 @@ export function AppProvider({ timeZone, children }: { timeZone: string; children
   useRewards();
   useShopRewards();
   useInventory();
+  useGallery();
   const value = useMemo(() => {
     const lists = [...(data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
     return {
