@@ -1,5 +1,6 @@
 import { Minus, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { WEIGHT_DEFAULT, WEEKLY_BUDGET } from '../../../shared/economy';
 import { normalizeHabitRules } from '../../../shared/habits';
 import {
   LIST_COLORS,
@@ -10,9 +11,11 @@ import {
 } from '../../../shared/types';
 import { ColorPicker } from '../../components/ColorPicker';
 import { Segmented, WeekdayPicker } from '../../components/pickers';
+import { WeightField } from '../../components/WeightField';
 import { errorMessage } from '../../lib/api';
 import { useApp } from '../../lib/appContext';
-import { useHabitMutations, useHabits } from '../../lib/queries';
+import { useHabitMutations, useHabits, useRecurring, useRewards } from '../../lib/queries';
+import { formatCoins, nextWeekValue } from '../../lib/rewards';
 
 const FREQUENCY_OPTIONS: { value: HabitFrequency; content: string }[] = [
   { value: 'daily', content: 'Daily' },
@@ -32,9 +35,28 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
   const [frequency, setFrequency] = useState<HabitFrequency>(habit?.frequency ?? 'daily');
   const [weekdays, setWeekdays] = useState<Weekday[]>(habit?.weekdays ?? []);
   const [target, setTarget] = useState<number>(habit?.target ?? 3);
+  const [weight, setWeight] = useState<number>(habit?.weight ?? WEIGHT_DEFAULT);
+  const { data: templates } = useRecurring();
+  const { data: rewards } = useRewards();
   const [error, setError] = useState<string | null>(null);
   const pending = create.isPending || update.isPending;
   const maxTarget = frequency === 'per_month' ? 31 : 7;
+  const hintRules = normalizeHabitRules({
+    frequency,
+    weekdays,
+    target: Math.min(target, maxTarget),
+  });
+  const hint =
+    hintRules.ok && habits && templates
+      ? `≈ ${formatCoins(
+          nextWeekValue(
+            { type: 'habit', id: habit?.id ?? 'new', weight, rules: hintRules.rules },
+            habits,
+            templates,
+            rewards?.nextBudget ?? WEEKLY_BUDGET,
+          ),
+        )} coins per tick from Monday`
+      : null;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -46,7 +68,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
     });
     if (!normalized.ok) return setError(normalized.error);
     setError(null);
-    const fields = { name: name.trim(), color, ...normalized.rules };
+    const fields = { name: name.trim(), color, weight, ...normalized.rules };
     try {
       if (habit) await update.mutateAsync({ id: habit.id, changes: fields });
       else await create.mutateAsync(fields);
@@ -126,6 +148,8 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
             </div>
           </>
         )}
+
+        <WeightField value={weight} onChange={setWeight} hint={hint} disabled={!canEdit} />
       </div>
 
       {!canEdit && <p className="muted">Offline — changes are disabled until you reconnect</p>}

@@ -11,15 +11,18 @@ import type {
 } from '../../shared/schemas';
 import type {
   ConnectorStatus,
+  EarnedReward,
   HabitWithChecks,
   List,
   Me,
   Priority,
   RecurringTask,
+  RewardsSummary,
   Task,
 } from '../../shared/types';
 import { api, errorMessage } from './api';
 import { useFeedback } from './feedback';
+import { rewardText } from './rewards';
 
 export const keys = {
   me: ['me'] as const,
@@ -30,7 +33,13 @@ export const keys = {
   recurring: ['recurring'] as const,
   habits: ['habits'] as const,
   connector: ['connector'] as const,
+  rewards: ['rewards'] as const,
 };
+
+/** Wallet, level and what each habit / weekly task earns (SPEC §13.10). */
+export function useRewards() {
+  return useQuery({ queryKey: keys.rewards, queryFn: () => api<RewardsSummary>('/rewards') });
+}
 
 export function useConnector() {
   return useQuery({ queryKey: keys.connector, queryFn: () => api<ConnectorStatus>('/connector') });
@@ -63,6 +72,7 @@ export function useRecurringMutations() {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: keys.recurring }),
       queryClient.invalidateQueries({ queryKey: keys.tasks }),
+      queryClient.invalidateQueries({ queryKey: keys.rewards }),
     ]);
 
   const create = useMutation({
@@ -87,7 +97,11 @@ export function useRecurringMutations() {
 export function useHabitMutations() {
   const queryClient = useQueryClient();
   const { showError } = useFeedback();
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: keys.habits });
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: keys.habits }),
+      queryClient.invalidateQueries({ queryKey: keys.rewards }),
+    ]);
 
   const create = useMutation({
     mutationFn: (input: HabitCreateInput) =>
@@ -104,10 +118,12 @@ export function useHabitMutations() {
     onSuccess: invalidate,
     onError: (error) => showError(errorMessage(error)),
   });
-  /** Tick or un-tick one day; shown right away. */
+  /** Tick or un-tick one day; shown right away. A tick resolves with what it earned. */
   const setCheck = useMutation({
     mutationFn: ({ id, date, checked }: { id: string; date: string; checked: boolean }) =>
-      api(`/habits/${id}/checks/${date}`, { method: checked ? 'PUT' : 'DELETE' }),
+      api<EarnedReward | undefined>(`/habits/${id}/checks/${date}`, {
+        method: checked ? 'PUT' : 'DELETE',
+      }),
     onMutate: async ({ id, date, checked }) => {
       await queryClient.cancelQueries({ queryKey: keys.habits });
       const previous = queryClient.getQueryData<HabitWithChecks[]>(keys.habits);
@@ -150,8 +166,12 @@ export function useCompletedTasks() {
 
 export function useTaskMutations() {
   const queryClient = useQueryClient();
-  const { showUndo, showError } = useFeedback();
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: keys.tasks });
+  const { showUndo, updateToast, showError } = useFeedback();
+  const invalidate = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: keys.tasks }),
+      queryClient.invalidateQueries({ queryKey: keys.rewards }),
+    ]);
   const onError = (error: unknown) => showError(errorMessage(error));
 
   /** Removes a task from a cached list right away; returns a function that restores it. */
@@ -173,14 +193,20 @@ export function useTaskMutations() {
   });
 
   const complete = useMutation({
-    mutationFn: (task: Task) => api<Task>(`/tasks/${task.id}/complete`, { method: 'POST' }),
+    mutationFn: (task: Task) =>
+      api<Task & { reward?: EarnedReward }>(`/tasks/${task.id}/complete`, { method: 'POST' }),
     onMutate: async (task) => {
       const restore = await removeFromCache(keys.openTasks, task.id);
-      showUndo('Task completed', () => uncomplete.mutate(task.id));
-      return restore;
+      const toast = showUndo('Task completed', () => uncomplete.mutate(task.id));
+      return { restore, toast };
     },
-    onError: (error, _task, restore) => {
-      restore?.();
+    onSuccess: (task, _task, context) => {
+      // Weekly tasks earn coins (SPEC §13.4): "Task completed · +500".
+      const earned = task.reward && rewardText(task.reward);
+      if (earned) updateToast(context.toast, `Task completed · ${earned}`);
+    },
+    onError: (error, _task, context) => {
+      context?.restore();
       onError(error);
     },
     onSettled: invalidate,

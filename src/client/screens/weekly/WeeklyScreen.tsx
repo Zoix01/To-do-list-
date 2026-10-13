@@ -7,12 +7,16 @@ import { AddButton, ScreenHeader } from '../../components/AppShell';
 import { Dialog } from '../../components/Dialog';
 import { PriorityTag, titleClass } from '../../components/TaskRow';
 import { useApp } from '../../lib/appContext';
-import { useRecurring, useRecurringMutations } from '../../lib/queries';
+import { useRecurring, useRecurringMutations, useRewards } from '../../lib/queries';
 import { RecurringForm } from './RecurringForm';
 
 function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: () => void }) {
   const { listsById, canEdit } = useApp();
   const { update } = useRecurringMutations();
+  const { data: rewards } = useRewards();
+  // Created this week: earns from the next snapshot (SPEC §13.3).
+  const earnsFromMonday =
+    rewards?.started && template.active && !rewards.weekly[template.id]?.inSnapshot;
   const list = template.listId ? listsById.get(template.listId) : undefined;
   const schedule =
     template.mode === 'fixed' && template.weekday
@@ -32,6 +36,7 @@ function TemplateRow({ template, onOpen }: { template: RecurringTask; onOpen: ()
           <span>{schedule}</span>
           {list && <span>{list.name}</span>}
           {!template.active && <span className="paused-tag">Paused</span>}
+          {earnsFromMonday && <span>Earns from Mon</span>}
         </span>
       </button>
       <button

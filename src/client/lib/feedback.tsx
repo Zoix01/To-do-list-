@@ -15,8 +15,10 @@ interface Toast {
 }
 
 interface FeedbackValue {
-  /** Toasts are only used for undo (SPEC §14). */
-  showUndo: (message: string, undo: () => void) => void;
+  /** Toasts are only used for undo (SPEC §14). Returns the toast's id. */
+  showUndo: (message: string, undo: () => void) => number;
+  /** Changes a toast's text if it is still shown (e.g. to add the coins earned). */
+  updateToast: (id: number, message: string) => void;
   /** Shows a one-line error under the screen header until dismissed or replaced. */
   showError: (message: string) => void;
   error: string | null;
@@ -34,18 +36,24 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   const showUndo = useCallback((message: string, undo: () => void) => {
     nextId.current += 1;
     setToast({ id: nextId.current, message, action: { label: 'Undo', run: undo } });
+    return nextId.current;
+  }, []);
+  const updateToast = useCallback((id: number, message: string) => {
+    setToast((toast) => (toast?.id === id ? { ...toast, message } : toast));
   }, []);
   const showError = useCallback((message: string) => setError(message), []);
   const clearError = useCallback(() => setError(null), []);
 
+  // Keyed on the id, so changing a toast's text doesn't extend it.
+  const toastId = toast?.id;
   useEffect(() => {
-    if (!toast) return;
+    if (toastId === undefined) return;
     const timer = window.setTimeout(() => setToast(null), TOAST_MS);
     return () => window.clearTimeout(timer);
-  }, [toast]);
+  }, [toastId]);
 
   return (
-    <FeedbackContext.Provider value={{ showUndo, showError, error, clearError }}>
+    <FeedbackContext.Provider value={{ showUndo, updateToast, showError, error, clearError }}>
       {children}
       <div className="toast-region" role="status" aria-live="polite">
         {toast && (

@@ -159,3 +159,214 @@
 .month-legend {
   margin-top: var(--space-2);
 }
+
+/* ---------------------------------------------------------------- Rewards (SPEC §13.10, §13.11) */
+
+.rewards-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--hairline);
+  font-size: var(--text-meta);
+}
+
+.rewards-bar__level {
+  color: var(--text);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+
+.xp-bar {
+  position: relative;
+  width: 96px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--surface-raised);
+}
+
+.xp-bar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  transition: width 400ms var(--ease-out);
+}
+
+.rewards-bar__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text);
+}
+
+.rewards-bar__stat svg {
+  color: var(--text-muted);
+}
+
+.rewards-bar__week {
+  margin-left: auto;
+}
+
+@media (max-width: 559px) {
+  .rewards-bar__week {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Tick: the checkbox pops, the streak bumps, the coins float up. */
+.habit-tick {
+  position: relative;
+  display: inline-flex;
+}
+
+.habit-tick.is-popping .checkbox__box {
+  animation: habit-pop 320ms var(--ease-out);
+}
+
+@keyframes habit-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.is-bumping {
+  display: inline-block;
+  animation: streak-bump 360ms var(--ease-out);
+}
+
+@keyframes streak-bump {
+  0% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-3px) scale(1.12);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.reward-float {
+  position: absolute;
+  left: 50%;
+  bottom: 70%;
+  color: var(--accent);
+  font-size: var(--text-meta);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  animation: reward-float 1100ms var(--ease-out);
+}
+
+@keyframes reward-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  20%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -14px);
+  }
+}
+
+/* Milestone or level-up: a ring spreads from the checkbox and a line shows on the card. */
+.habit-tick.is-celebrating::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid var(--habit-color);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  animation: habit-ring 900ms var(--ease-out) 2;
+}
+
+@keyframes habit-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+.habit-celebration {
+  color: var(--accent);
+  font-weight: var(--weight-medium);
+  animation: celebration 3200ms var(--ease-out) forwards;
+}
+
+@keyframes celebration {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  10%,
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.rewards-bar__level.is-leveling {
+  display: inline-block;
+  color: var(--accent);
+  animation: streak-bump 600ms var(--ease-out);
+}
+
+/* Reduced motion: the same feedback as a plain fade (SPEC §13.11). */
+@media (prefers-reduced-motion: reduce) {
+  .habit-tick.is-popping .checkbox__box,
+  .is-bumping,
+  .rewards-bar__level.is-leveling,
+  .habit-celebration {
+    animation: reward-fade 300ms linear !important;
+  }
+  .reward-float {
+    animation: reward-fade-out 1100ms linear !important;
+    transform: translate(-50%, -6px);
+  }
+  .habit-tick.is-celebrating::after {
+    animation: none !important;
+  }
+}
+
+@keyframes reward-fade {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes reward-fade-out {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

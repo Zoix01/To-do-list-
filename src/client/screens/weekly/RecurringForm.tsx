@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react';
+import { WEIGHT_DEFAULT, WEEKLY_BUDGET } from '../../../shared/economy';
 import type { RecurringUpdateInput } from '../../../shared/schemas';
 import type { Priority, RecurringMode, RecurringTask, Weekday } from '../../../shared/types';
 import { ConfirmDialog } from '../../components/Dialog';
 import { ListPicker, PriorityPicker, Segmented, WeekdayPicker } from '../../components/pickers';
+import { WeightField } from '../../components/WeightField';
 import { errorMessage } from '../../lib/api';
 import { useApp } from '../../lib/appContext';
-import { useRecurringMutations } from '../../lib/queries';
+import { useHabits, useRecurring, useRecurringMutations, useRewards } from '../../lib/queries';
+import { formatCoins, nextWeekValue } from '../../lib/rewards';
 
 /** Create / edit a weekly task template (SPEC §6, §8.5). */
 export function RecurringForm({
@@ -23,6 +26,21 @@ export function RecurringForm({
   const [weekday, setWeekday] = useState<Weekday | null>(template?.weekday ?? null);
   const [priority, setPriority] = useState<Priority>(template?.priority ?? 'medium');
   const [listId, setListId] = useState<string | null>(template?.listId ?? null);
+  const [weight, setWeight] = useState<number>(template?.weight ?? WEIGHT_DEFAULT);
+  const { data: habits } = useHabits();
+  const { data: templates } = useRecurring();
+  const { data: rewards } = useRewards();
+  const hint =
+    habits && templates
+      ? `≈ ${formatCoins(
+          nextWeekValue(
+            { type: 'weekly', id: template?.id ?? 'new', weight, rules: null },
+            habits,
+            templates,
+            rewards?.nextBudget ?? WEEKLY_BUDGET,
+          ),
+        )} coins a week from Monday`
+      : null;
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const pending = create.isPending || update.isPending;
@@ -39,6 +57,7 @@ export function RecurringForm({
       weekday: mode === 'fixed' ? weekday : null,
       priority,
       listId,
+      weight,
     };
     try {
       if (template) {
@@ -112,6 +131,8 @@ export function RecurringForm({
         <div className="field-grid__value">
           <ListPicker value={listId} onChange={setListId} disabled={!canEdit} />
         </div>
+
+        <WeightField value={weight} onChange={setWeight} hint={hint} disabled={!canEdit} />
       </div>
 
       <p className="muted">

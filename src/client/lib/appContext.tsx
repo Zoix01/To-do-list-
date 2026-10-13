@@ -1,7 +1,14 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { ISODate, List } from '../../shared/types';
 import { useOnline, useToday } from './hooks';
-import { useCompletedTasks, useHabits, useLists, useOpenTasks, useRecurring } from './queries';
+import {
+  useCompletedTasks,
+  useHabits,
+  useLists,
+  useOpenTasks,
+  useRecurring,
+  useRewards,
+} from './queries';
 
 interface AppValue {
   today: ISODate;
@@ -23,6 +30,7 @@ export function AppProvider({ timeZone, children }: { timeZone: string; children
   useCompletedTasks();
   useRecurring();
   useHabits();
+  useRewards();
   const value = useMemo(() => {
     const lists = [...(data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
     return {
