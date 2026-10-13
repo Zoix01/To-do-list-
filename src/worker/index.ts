@@ -15,7 +15,7 @@ import { habitRoutes } from './routes/habits';
 import { listRoutes } from './routes/lists';
 import { recurringRoutes } from './routes/recurring';
 import { rewardRoutes, rewardsContext } from './routes/rewards';
-import { inventoryRoutes, shopRoutes } from './routes/shop';
+import { galleryRoutes, inventoryRoutes, shopRoutes } from './routes/shop';
 import { taskRoutes } from './routes/tasks';
 import { prepareRewards } from './services/rewards';
 
@@ -43,6 +43,7 @@ api.route('/connector', connectorRoutes);
 api.route('/rewards', rewardRoutes);
 api.route('/shop', shopRoutes);
 api.route('/inventory', inventoryRoutes);
+api.route('/gallery', galleryRoutes);
 
 // ---------------------------------------------------------------- Everything the Worker serves itself
 

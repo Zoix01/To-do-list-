@@ -7,6 +7,8 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { EconomyItemType, LedgerKind } from '../../shared/rewards';
+import type { BoxResult } from '../../shared/boxes';
+import type { Tier } from '../../shared/seasons';
 import type { RewardIcon } from '../../shared/shop';
 import type {
   HabitFrequency,
@@ -218,4 +220,34 @@ export const vacationDays = sqliteTable('vacation_days', {
   date: text('date').primaryKey(),
   inventoryItemId: text('inventory_item_id').notNull().unique(),
   createdAt: text('created_at').notNull(),
+});
+
+/**
+ * One row per opened box, keyed by the box: the result is decided on the server,
+ * stored, and only then animated, so a box can never be opened twice (13.7).
+ */
+export const boxOpenings = sqliteTable('box_openings', {
+  boxId: text('box_id').primaryKey(),
+  /** The request that opened it; its grants only apply if this row is theirs. */
+  attempt: text('attempt').notNull(),
+  type: text('type').$type<BoxResult['type']>().notNull(),
+  tier: text('tier').$type<Tier>(),
+  pieceId: text('piece_id'),
+  seasonId: text('season_id'),
+  duplicate: integer('duplicate', { mode: 'boolean' }).notNull().default(false),
+  shards: integer('shards').notNull().default(0),
+  coins: integer('coins').notNull().default(0),
+  rewardId: text('reward_id'),
+  rewardName: text('reward_name'),
+  cosmeticId: text('cosmetic_id'),
+  charmUsed: integer('charm_used', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+/** Art pieces I own (13.13). */
+export const ownedPieces = sqliteTable('owned_pieces', {
+  pieceId: text('piece_id').primaryKey(),
+  seasonId: text('season_id').notNull(),
+  acquiredAt: text('acquired_at').notNull(),
+  source: text('source').$type<'box' | 'shards'>().notNull(),
 });

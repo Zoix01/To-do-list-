@@ -8,7 +8,13 @@ import {
   shopRewardUpdateSchema,
   vacationSchema,
 } from '../../shared/schemas';
-import type { InventoryItem, InventoryView, ShopReward } from '../../shared/types';
+import type {
+  BoxOpening,
+  InventoryItem,
+  InventoryView,
+  OwnedPiece,
+  ShopReward,
+} from '../../shared/types';
 import { shopRewards } from '../db/schema';
 import type { AppEnv } from '../env';
 import { badRequest, notFound, readBody } from '../http';
@@ -23,6 +29,12 @@ import {
   unarmFreeze,
   useReward,
 } from '../services/inventory';
+import { seasonsFrom } from '../../shared/seasonData';
+import type { Env } from '../env';
+import { buyPiece, loadOwnedPieces, openBoxItem, useCharm } from '../services/boxes';
+import { rewardsStart } from '../services/rewards';
+
+const seasonsOf = (env: Env) => seasonsFrom(rewardsStart(env));
 
 /** The Shop: my real-life rewards and buying (SPEC §13.6). */
 export const shopRoutes = new Hono<AppEnv>()
@@ -104,7 +116,25 @@ export const inventoryRoutes = new Hono<AppEnv>()
     await cancelVacation(c.get('db'), c.get('today'), c.req.param('id'));
     return c.body(null, 204);
   })
+  // Opening a box returns its stored result; opening it again returns the same one (13.7).
+  .post('/:id/open', async (c) =>
+    c.json<BoxOpening>(
+      await openBoxItem(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env)),
+    ),
+  )
+  .post('/:id/charm', async (c) => {
+    await useCharm(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env));
+    return c.body(null, 204);
+  })
   .post('/:id/use', async (c) => {
     await useReward(c.get('db'), c.get('today'), c.req.param('id'));
+    return c.body(null, 204);
+  });
+
+/** Owned art pieces, and buying missing ones with shards (SPEC §13.8, §13.13). */
+export const galleryRoutes = new Hono<AppEnv>()
+  .get('/', async (c) => c.json<OwnedPiece[]>(await loadOwnedPieces(c.get('db'))))
+  .post('/pieces/:id/buy', async (c) => {
+    await buyPiece(c.get('db'), c.get('today'), c.req.param('id'), seasonsOf(c.env));
     return c.body(null, 204);
   });

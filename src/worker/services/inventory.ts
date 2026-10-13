@@ -41,7 +41,7 @@ const dialect = new SQLiteAsyncDialect();
  * Runs statements as one D1 batch, which D1 executes as a single transaction.
  * (Drizzle's own batch can't mix in raw SQL statements.)
  */
-async function transaction(db: Db, statements: Statement[]): Promise<D1Result[]> {
+export async function transaction(db: Db, statements: Statement[]): Promise<D1Result[]> {
   if (statements.length === 0) return [];
   const client = db.$client;
   return client.batch(
@@ -68,26 +68,27 @@ export async function loadEconomy(db: Db): Promise<Economy> {
 
 // ---------------------------------------------------------------- Ledger events
 
-interface Event {
+export interface Event {
   key: string;
-  kind: 'buy' | 'refund' | 'use';
+  kind: 'buy' | 'refund' | 'use' | 'box' | 'shards';
   itemId: string | null;
   date: ISODate;
   coins?: number;
+  shards?: number;
   detail: Record<string, unknown>;
 }
 
 /** Writes a ledger row only if `condition` holds (in the same transaction); an existing key is skipped. */
-function eventIf(event: Event, condition: SQL, now: string) {
+export function eventIf(event: Event, condition: SQL, now: string) {
   return sql`
     INSERT INTO rewards_ledger (key, kind, item_id, date, coins, shards, xp, boxes, detail, created_at)
     SELECT ${event.key}, ${event.kind}, ${event.itemId}, ${event.date}, ${event.coins ?? 0},
-      0, 0, 0, ${JSON.stringify(event.detail)}, ${now}
+      ${event.shards ?? 0}, 0, 0, ${JSON.stringify(event.detail)}, ${now}
     WHERE ${condition}
     ON CONFLICT DO NOTHING`;
 }
 
-const itemIs = (id: string, status: string, now: string) =>
+export const itemIs = (id: string, status: string, now: string) =>
   sql`EXISTS (SELECT 1 FROM inventory_items WHERE id = ${id} AND status = ${status} AND updated_at = ${now})`;
 
 // ---------------------------------------------------------------- Habit marks (13.9)
@@ -223,7 +224,7 @@ export async function settleAllFreezes(db: Db, today: ISODate): Promise<void> {
 
 // ---------------------------------------------------------------- Buying (13.6)
 
-export type BuyItem = 'freeze' | 'vacation' | 'reward';
+export type BuyItem = 'box' | 'freeze' | 'vacation' | 'reward';
 
 export async function buy(
   db: Db,
@@ -247,7 +248,7 @@ export async function buy(
   } else {
     price = prices[input.item];
     type = input.item;
-    name = input.item === 'freeze' ? 'Streak freeze' : 'Vacation day';
+    name = { box: 'Mystery box', freeze: 'Streak freeze', vacation: 'Vacation day' }[input.item];
   }
 
   const key = `buy:${input.requestId}`;
@@ -482,6 +483,7 @@ export async function inventoryView(db: Db, today: ISODate): Promise<InventoryVi
           date: row.date,
           createdAt: row.createdAt,
           coins: row.coins,
+          shards: 0,
           boxes: 0,
           name: null,
           detail: { count: 1 },
@@ -501,6 +503,7 @@ export async function inventoryView(db: Db, today: ISODate): Promise<InventoryVi
       date: row.date,
       createdAt: row.createdAt,
       coins: row.coins,
+      shards: row.shards,
       boxes: row.boxes,
       name: typeof detail?.name === 'string' ? detail.name : nameOf(detail?.habitId ?? row.itemId),
       detail,

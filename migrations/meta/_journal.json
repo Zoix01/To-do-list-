@@ -43,6 +43,13 @@
       "when": 1791897280255,
       "tag": "0005_shop_freezes_vacation",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791902473319,
+      "tag": "0006_boxes_gallery",
+      "breakpoints": true
     }
   ]
 }
