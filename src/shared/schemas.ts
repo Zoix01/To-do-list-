@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { isISODate } from './dates';
 import { REWARD_PRICE_MAX, REWARD_PRICE_MIN, WEIGHT_MAX, WEIGHT_MIN } from './economy';
 import { REWARD_ICONS } from './shop';
+import { HABIT_ICON_NAMES, TICK_ANIMATIONS } from './cosmetics';
 import {
   HABIT_FREQUENCIES,
-  LIST_COLORS,
+  ALL_LIST_COLORS,
   PRIORITIES,
   RECURRING_MODES,
   RECURRING_PERIODS,
@@ -20,7 +21,7 @@ export const loginSchema = z.object({ password: z.string().min(1).max(1000) });
 
 export const listCreateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
-  color: z.enum(LIST_COLORS),
+  color: z.enum(ALL_LIST_COLORS),
 });
 export type ListCreateInput = z.infer<typeof listCreateSchema>;
 
@@ -91,23 +92,25 @@ const habitName = z.string().trim().min(1, 'Name is required').max(100);
 
 export const habitCreateSchema = z.object({
   name: habitName,
-  color: z.enum(LIST_COLORS),
+  color: z.enum(ALL_LIST_COLORS),
   frequency: z.enum(HABIT_FREQUENCIES),
   weekdays: z.array(weekday).max(7).optional(),
   target: z.number().int().nullable().optional(),
   weight: weight.optional(),
+  icon: z.enum(HABIT_ICON_NAMES).nullable().optional(),
 });
 export type HabitCreateInput = z.infer<typeof habitCreateSchema>;
 
 export const habitUpdateSchema = z
   .object({
     name: habitName,
-    color: z.enum(LIST_COLORS),
+    color: z.enum(ALL_LIST_COLORS),
     frequency: z.enum(HABIT_FREQUENCIES),
     weekdays: z.array(weekday).max(7),
     target: z.number().int().nullable(),
     archived: z.boolean(),
     weight,
+    icon: z.enum(HABIT_ICON_NAMES).nullable(),
   })
   .partial()
   .strict();
@@ -161,3 +164,15 @@ export type BuyInput = z.infer<typeof buySchema>;
 
 export const armSchema = z.object({ habitId: z.string() });
 export const vacationSchema = z.object({ date: isoDate });
+
+export const cosmeticBuySchema = z.object({ requestId: z.string().min(8).max(64) });
+
+export const appearanceSchema = z.object({
+  tickAnimation: z.enum(['default', ...TICK_ANIMATIONS]),
+});
+
+/** Settings → Gamification (SPEC §13.2). */
+export const economySchema = z.object({
+  weeklyBudget: z.number().int().min(1000).max(1_000_000),
+  expectedRate: z.number().min(0.1).max(1),
+});

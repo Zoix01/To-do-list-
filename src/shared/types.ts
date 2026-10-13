@@ -27,7 +27,28 @@ export const LIST_COLORS = [
   '#C98A8A',
   '#A08C76',
 ] as const;
-export type ListColor = (typeof LIST_COLORS)[number];
+
+/**
+ * Extra list colors, unlocked as cosmetics (SPEC §13.12): lighter and softer
+ * than the base 12, shown after them in the picker once owned.
+ */
+export const EXTRA_LIST_COLORS = [
+  '#C9B98A',
+  '#B8C27A',
+  '#93BC8F',
+  '#6FB7A8',
+  '#7FB4CF',
+  '#9AA6D8',
+  '#C6A0DA',
+  '#D490B8',
+  '#E2A48C',
+  '#C49A62',
+  '#B9AFA4',
+  '#8FA7A0',
+] as const;
+
+export const ALL_LIST_COLORS = [...LIST_COLORS, ...EXTRA_LIST_COLORS] as const;
+export type ListColor = (typeof ALL_LIST_COLORS)[number];
 
 export interface List {
   id: string;
@@ -174,6 +195,10 @@ export interface RewardsSummary {
   prices: { box: number; freeze: number; vacation: number; cosmetic: number };
   /** Vacation days, past and planned: all habits are paused on them (13.9). */
   vacationDays: ISODate[];
+  /** Cosmetic ids I own, e.g. "color:sand" (13.12). */
+  cosmetics: string[];
+  /** The tick animation chosen in Settings → Appearance. */
+  tickAnimation: string;
   habits: Record<string, ItemRewardInfo>;
   weekly: Record<string, ItemRewardInfo>;
 }
