@@ -1304,3 +1304,208 @@ body:has(.app--phone) .toast-region {
   max-width: none;
   max-height: 94vh;
 }
+
+/* ---------------------------------------------------------------- Tick animations (SPEC §13.12) */
+
+.tick-effect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tick-effect__spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 6px;
+  margin: -3px 0 0 -1px;
+  border-radius: 1px;
+  background: var(--effect-color);
+  opacity: 0;
+  transform: rotate(var(--angle)) translateY(-6px);
+  animation: tick-spark 520ms var(--ease-out);
+}
+
+@keyframes tick-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(-6px) scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-18px) scaleY(0.4);
+  }
+}
+
+.tick-effect__ring {
+  position: absolute;
+  inset: 7px;
+  border: 2px solid var(--effect-color);
+  border-radius: 50%;
+  opacity: 0;
+  animation: tick-ripple 700ms var(--ease-out);
+}
+
+.tick-effect__ring--late {
+  animation-delay: 180ms;
+}
+
+@keyframes tick-ripple {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+.tick-effect__blot {
+  position: absolute;
+  inset: 6px;
+  border-radius: 46% 54% 42% 58% / 55% 40% 60% 45%;
+  background: var(--effect-color);
+  opacity: 0;
+  animation: tick-blot 650ms var(--ease-out);
+}
+
+@keyframes tick-blot {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.6) rotate(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8) rotate(25deg);
+  }
+}
+
+.tick-effect__drop {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--effect-color);
+  opacity: 0;
+  animation: tick-drop 600ms var(--ease-out);
+}
+
+.tick-effect__drop--a {
+  --dx: 13px;
+  --dy: -9px;
+}
+
+.tick-effect__drop--b {
+  --dx: -12px;
+  --dy: -11px;
+}
+
+.tick-effect__drop--c {
+  --dx: 4px;
+  --dy: 14px;
+}
+
+@keyframes tick-drop {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)));
+  }
+}
+
+.tick-effect__leaf {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  display: inline-flex;
+  color: var(--effect-color);
+  opacity: 0;
+  animation: tick-leaf 900ms var(--ease-out);
+}
+
+@keyframes tick-leaf {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) rotate(0);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 14px), -16px) rotate(70deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick-effect > * {
+    animation: none !important;
+    display: none;
+  }
+}
+
+.habit-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* Settings → Appearance and Gamification (SPEC §13.12, §13.2). */
+.animation-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.animation-choice li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.animation-choice li.is-locked {
+  opacity: 0.6;
+}
+
+.animation-choice__option {
+  height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+}
+
+.animation-choice__option[aria-checked='true'] {
+  border-color: var(--accent);
+}
+
+.economy-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 420px;
+}
+
+.economy-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.economy-form__field .muted {
+  font-size: var(--text-meta);
+}
+
+.economy-form .button {
+  align-self: flex-start;
+}

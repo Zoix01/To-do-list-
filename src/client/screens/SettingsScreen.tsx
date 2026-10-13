@@ -7,6 +7,7 @@ import { useFeedback } from '../lib/feedback';
 import { keys } from '../lib/queries';
 import { forgetUserData } from '../lib/queryClient';
 import { ConnectorSection } from './ConnectorSection';
+import { AppearanceSection, GamificationSection } from './GamificationSettings';
 
 export function SettingsScreen() {
   const { canEdit, timeZone } = useApp();
@@ -40,10 +41,8 @@ export function SettingsScreen() {
         </button>
       </section>
       <ConnectorSection />
-      <section className="settings-section">
-        <h2 className="section__title">Appearance</h2>
-        <p className="settings-section__text">Dark theme. It is the only theme for now.</p>
-      </section>
+      <AppearanceSection />
+      <GamificationSection />
       <section className="settings-section">
         <h2 className="section__title">Time zone</h2>
         <p className="settings-section__text">

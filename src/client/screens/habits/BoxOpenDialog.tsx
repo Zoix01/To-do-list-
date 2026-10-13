@@ -1,5 +1,6 @@
-import { Clover, Coins, Gem, Package, Snowflake, TreePalm } from 'lucide-react';
+import { Clover, Coins, Package, Palette, Snowflake, TreePalm } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { findCosmetic, type HabitIcon } from '../../../shared/cosmetics';
 import type { RewardIcon } from '../../../shared/shop';
 import { SEASONS } from '../../../shared/seasonData';
 import { findPiece } from '../../../shared/seasons';
@@ -8,6 +9,7 @@ import { Dialog } from '../../components/Dialog';
 import { errorMessage } from '../../lib/api';
 import { useFeedback } from '../../lib/feedback';
 import { useOpenBox, useShopRewards } from '../../lib/queries';
+import { HABIT_ICON_COMPONENTS } from '../../lib/habitIcons';
 import { RewardIconView } from '../../lib/rewardIcons';
 import { formatCoins } from '../../lib/rewards';
 import { ArtPiece } from './ArtPiece';
@@ -61,10 +63,25 @@ function Reveal({ opening }: { opening: BoxOpening }) {
       note = 'A real-life reward, in your Inventory';
       break;
     }
-    case 'cosmetic':
-      visual = <Gem size={40} aria-hidden="true" />;
-      title = 'Cosmetic';
+    case 'cosmetic': {
+      const cosmetic = opening.cosmeticId ? findCosmetic(opening.cosmeticId) : undefined;
+      const Icon =
+        cosmetic?.kind === 'icon' ? HABIT_ICON_COMPONENTS[cosmetic.value as HabitIcon] : null;
+      visual =
+        cosmetic?.kind === 'color' ? (
+          <span
+            className="cosmetic-swatch cosmetic-swatch--large"
+            style={{ background: cosmetic.value }}
+          />
+        ) : Icon ? (
+          <Icon size={40} aria-hidden="true" />
+        ) : (
+          <Palette size={40} aria-hidden="true" />
+        );
+      title = cosmetic?.name ?? 'Cosmetic';
+      note = 'Unlocked for good';
       break;
+    }
   }
   const tier = opening.type === 'piece' ? (opening.tier ?? 'common') : 'item';
   return (

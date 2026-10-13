@@ -8,6 +8,8 @@ import {
 } from '../../../shared/habits';
 import type { HabitWithChecks } from '../../../shared/types';
 import { Checkbox } from '../../components/controls';
+import { TickEffect } from '../../components/TickEffect';
+import { HabitIconView } from '../../lib/habitIcons';
 import { useApp } from '../../lib/appContext';
 import { useHabitMutations, useRewards, useVacationDays } from '../../lib/queries';
 import { celebrationLines, formatCoins } from '../../lib/rewards';
@@ -28,6 +30,9 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
   const { data: rewards } = useRewards();
   const [popping, setPopping] = useState(false);
   const [burst, setBurst] = useState<Burst | null>(null);
+  // Each tick replays the chosen tick animation (SPEC §13.12).
+  const [effect, setEffect] = useState(0);
+  const animation = rewards?.tickAnimation ?? 'default';
   const checks = new Set(habit.checks);
   const checked = checks.has(today);
   const vacationDays = useVacationDays();
@@ -39,6 +44,13 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
   const info = rewards?.started && !habit.archived ? rewards.habits[habit.id] : undefined;
   const celebrating = Boolean(burst?.lines.length);
 
+  // The streak bump ends with the pop; a cosmetic animation has no pop, so end it by time.
+  useEffect(() => {
+    if (!popping) return;
+    const timer = window.setTimeout(() => setPopping(false), 450);
+    return () => window.clearTimeout(timer);
+  }, [popping]);
+
   useEffect(() => {
     if (!burst) return;
     const timer = window.setTimeout(() => setBurst(null), burst.lines.length ? 3200 : 1200);
@@ -47,7 +59,10 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
 
   function toggle() {
     const next = !checked;
-    if (next) setPopping(true);
+    if (next) {
+      setPopping(true);
+      setEffect((n) => n + 1);
+    }
     setCheck.mutate(
       { id: habit.id, date: today, checked: next },
       {
@@ -65,7 +80,11 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
   return (
     <li className={habit.archived ? 'task-row is-paused' : 'task-row'}>
       <span
-        className={['habit-tick', popping && 'is-popping', celebrating && 'is-celebrating']
+        className={[
+          'habit-tick',
+          popping && animation === 'default' && 'is-popping',
+          celebrating && 'is-celebrating',
+        ]
           .filter(Boolean)
           .join(' ')}
         style={{ '--habit-color': habit.color } as CSSProperties}
@@ -83,6 +102,7 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
           disabled={!canEdit || habit.archived}
           onChange={toggle}
         />
+        {effect > 0 && <TickEffect key={effect} kind={animation} color={habit.color} />}
         {burst && burst.coins > 0 && (
           <span key={burst.id} className="reward-float" aria-hidden="true">
             +{formatCoins(burst.coins)}
@@ -94,7 +114,10 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
         className="task-row__main"
         onClick={() => navigate(`/habits/${habit.id}`)}
       >
-        <span className="task-row__title">{habit.name}</span>
+        <span className="task-row__title">
+          <HabitIconView icon={habit.icon} />
+          {habit.name}
+        </span>
         <span className="task-row__meta">
           {burst && celebrating && (
             <span key={burst.id} className="habit-celebration" role="status">

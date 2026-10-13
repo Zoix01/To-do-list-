@@ -827,3 +827,120 @@
 .artwork.is-complete .artwork__grid {
   gap: 0;
 }
+
+/* ---------------------------------------------------------------- Habit icons (SPEC §13.12) */
+
+.habit-icons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.habit-icons__none {
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.habit-icons__none[aria-checked='true'] {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.habit-icons__label {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.icon-picker__option {
+  position: relative;
+}
+
+.icon-picker__option.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.icon-picker__lock {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+}
+
+.task-row__title .habit-icon {
+  margin-right: 6px;
+  vertical-align: -3px;
+}
+
+/* ---------------------------------------------------------------- Cosmetics in the Shop (SPEC §13.12) */
+
+.cosmetic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cosmetic-grid--icons {
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+}
+
+.cosmetic-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius);
+}
+
+.cosmetic-tile__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  color: var(--text);
+}
+
+.cosmetic-tile__name {
+  font-size: var(--text-meta);
+  text-transform: capitalize;
+  text-align: center;
+}
+
+.cosmetic-tile__owned {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-height);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.cosmetic-tile__buy .price {
+  font-size: var(--text-meta);
+}
+
+.cosmetic-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.cosmetic-swatch--large {
+  width: 48px;
+  height: 48px;
+}

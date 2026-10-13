@@ -7,6 +7,7 @@ import { RewardIconView } from '../../lib/rewardIcons';
 import { formatCoins } from '../../lib/rewards';
 import { Link } from '../../lib/router';
 import { HabitsNav } from './HabitsNav';
+import { ShopCosmetics } from './ShopCosmetics';
 import './habits.css';
 
 /** A price with the coin icon. */
@@ -125,6 +126,8 @@ export function ShopScreen() {
           </ul>
         )}
       </section>
+
+      <ShopCosmetics />
     </>
   );
 }

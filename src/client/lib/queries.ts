@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import type {
   HabitCreateInput,
   HabitUpdateInput,
@@ -497,4 +498,54 @@ export function useOpenBox() {
     mutationFn: (id: string) => api<BoxOpening>(`/inventory/${id}/open`, { method: 'POST' }),
     onSettled: invalidate,
   });
+}
+
+const NO_COSMETICS = new Set<string>();
+
+/** Cosmetic ids I own (SPEC §13.12). */
+export function useOwnedCosmetics(): ReadonlySet<string> {
+  const cosmetics = useRewards().data?.cosmetics;
+  return useMemo(() => (cosmetics ? new Set(cosmetics) : NO_COSMETICS), [cosmetics]);
+}
+
+/** Buying cosmetics (with undo) and Settings → Appearance / Gamification. */
+export function useCosmeticMutations() {
+  const queryClient = useQueryClient();
+  const { showUndo, showError } = useFeedback();
+  const invalidate = useInvalidateRewards();
+  const onError = (error: unknown) => showError(errorMessage(error));
+
+  const refund = useMutation({
+    mutationFn: (id: string) => api(`/shop/cosmetics/${id}/refund`, { method: 'POST' }),
+    onSettled: invalidate,
+    onError,
+  });
+  const buy = useMutation({
+    mutationFn: ({ id }: { id: string; name: string }) =>
+      api(`/shop/cosmetics/${id}/buy`, {
+        method: 'POST',
+        body: { requestId: crypto.randomUUID() },
+      }),
+    onSuccess: (_result, { id, name }) => showUndo(`Unlocked ${name}`, () => refund.mutate(id)),
+    onSettled: invalidate,
+    onError,
+  });
+  const setTickAnimation = useMutation({
+    mutationFn: (tickAnimation: string) =>
+      api('/settings/appearance', { method: 'PUT', body: { tickAnimation } }),
+    onMutate: async (tickAnimation) => {
+      await queryClient.cancelQueries({ queryKey: keys.rewards });
+      queryClient.setQueryData<RewardsSummary>(keys.rewards, (summary) =>
+        summary ? { ...summary, tickAnimation } : summary,
+      );
+    },
+    onSettled: invalidate,
+    onError,
+  });
+  const setEconomy = useMutation({
+    mutationFn: (economy: { weeklyBudget: number; expectedRate: number }) =>
+      api('/settings/economy', { method: 'PUT', body: economy }),
+    onSettled: invalidate,
+  });
+  return { buy, refund, setTickAnimation, setEconomy };
 }

@@ -1,6 +1,7 @@
 import { Minus, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { WEIGHT_DEFAULT, WEEKLY_BUDGET } from '../../../shared/economy';
+import type { HabitIcon } from '../../../shared/cosmetics';
 import { normalizeHabitRules } from '../../../shared/habits';
 import {
   LIST_COLORS,
@@ -11,6 +12,7 @@ import {
 } from '../../../shared/types';
 import { ColorPicker } from '../../components/ColorPicker';
 import { Segmented, WeekdayPicker } from '../../components/pickers';
+import { HabitIconPicker } from '../../components/HabitIconPicker';
 import { WeightField } from '../../components/WeightField';
 import { errorMessage } from '../../lib/api';
 import { useApp } from '../../lib/appContext';
@@ -36,6 +38,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
   const [weekdays, setWeekdays] = useState<Weekday[]>(habit?.weekdays ?? []);
   const [target, setTarget] = useState<number>(habit?.target ?? 3);
   const [weight, setWeight] = useState<number>(habit?.weight ?? WEIGHT_DEFAULT);
+  const [icon, setIcon] = useState<string | null>(habit?.icon ?? null);
   const { data: templates } = useRecurring();
   const { data: rewards } = useRewards();
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +71,13 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
     });
     if (!normalized.ok) return setError(normalized.error);
     setError(null);
-    const fields = { name: name.trim(), color, weight, ...normalized.rules };
+    const fields = {
+      name: name.trim(),
+      color,
+      weight,
+      icon: icon as HabitIcon | null,
+      ...normalized.rules,
+    };
     try {
       if (habit) await update.mutateAsync({ id: habit.id, changes: fields });
       else await create.mutateAsync(fields);
@@ -150,6 +159,11 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
         )}
 
         <WeightField value={weight} onChange={setWeight} hint={hint} disabled={!canEdit} />
+
+        <span className="field-grid__label">Icon</span>
+        <div className="field-grid__value">
+          <HabitIconPicker value={icon} onChange={setIcon} disabled={!canEdit} />
+        </div>
       </div>
 
       {!canEdit && <p className="muted">Offline — changes are disabled until you reconnect</p>}
