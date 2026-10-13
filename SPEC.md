@@ -784,6 +784,12 @@ Stop after each step so I can test:
 - **Purchase undo:** the toast shows for 5 seconds; the server accepts the refund for about 30 seconds.
 - **Wallet** is derived from the ledger (the sum of its rows), not stored separately. Spends are ledger rows too, inserted only if the sum covers the price, in one D1 batch with the inventory change; each request carries an ID that becomes part of the ledger key, so a double tap can't buy twice.
 - **Extra list colors** (cosmetics, after the base 12 in the picker): Sand `#C9B98A`, Pear `#B8C27A`, Sage `#93BC8F`, Seafoam `#6FB7A8`, Sky `#7FB4CF`, Cornflower `#9AA6D8`, Lilac `#C6A0DA`, Pink `#D490B8`, Peach `#E2A48C`, Ochre `#C49A62`, Stone `#B9AFA4`, Lichen `#8FA7A0`. All pass AA as text on `--bg` and `--surface`.
+- **Step 2 (Shop and Inventory):**
+  - The Habits tab's sub-screens live at `/habits`, `/habits/shop` (with `/habits/shop/rewards` for "Manage rewards") and `/habits/inventory`. The Gallery tab is added in step 3, with boxes; until then boxes are counted in the Inventory but can't be opened yet.
+  - Freezes: arming on the missed day itself still counts (armed by the period's end). Several armed freezes on one habit are used oldest first. "Take back" un-arms a freeze. A frozen week or month shows its ice icon on its last day in the month grid.
+  - Vacation days lower what a per_week / per_month streak needs, not what can be earned: the over-target cap stays the full target. Past vacation days disappear from the Inventory (they are spent); only today's and planned ones show, and only future ones can be cancelled.
+  - Real-life rewards cost 1–1,000,000 coins, are reordered with up/down buttons, and are archived (and restored) from their edit form.
+  - History lists the last 1,000 ledger rows, newest first; tick income is summed per day.
 
 ---
 
