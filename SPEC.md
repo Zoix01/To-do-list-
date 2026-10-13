@@ -798,6 +798,12 @@ Stop after each step so I can test:
   - The lucky charm is used from the Inventory (one active at a time) and consumed by the next box, which then gives an unowned piece.
   - The cosmetic box result falls back to a coin pouch until cosmetics exist (step 4).
   - Buying a piece with shards is one transaction: it only goes through with enough shards and while the piece is still missing.
+- **Step 4 (cosmetics and settings):**
+  - Cosmetics are listed in the Shop (List colors · Tick animations · Habit icons) as tiles with their price, or "Owned". Buying one unlocks it right away; the undo toast works as for items, but not once the cosmetic is in use (selected animation, a list or habit with that color, a habit with that icon).
+  - The server only accepts an extra list color or a locked habit icon if it's owned. The color picker shows owned extra colors after the base 12 (and always the current one).
+  - The habit icon picker shows the 60 icons in 8 groups (Health, Sport, Learning, Music & art, Home, Social, Mind, Work) plus "No icon"; locked ones show a lock. A habit's icon shows before its name in habit rows.
+  - A cosmetic tick animation replaces the checkbox pop; the coins float and the streak bump stay. With reduced motion only the fade remains. Previews: tap the small circle (Shop tiles and Settings).
+  - Settings → Appearance chooses the tick animation (default, or owned ones) and shows how many colors and icons are unlocked. Settings → Gamification edits the weekly budget (1,000–1,000,000) and expected rate (10–100%), showing the resulting prices before saving.
 
 ---
 
