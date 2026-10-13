@@ -21,15 +21,25 @@ export const EXTRA_COLOR_NAMES: Record<(typeof EXTRA_LIST_COLORS)[number], strin
   '#8FA7A0': 'Lichen',
 };
 
-export const TICK_ANIMATIONS = ['sparks', 'ripple', 'ink', 'leaf'] as const;
+/** Tick animations to unlock; "default" (sparks) is free (SPEC §13.12). */
+export const TICK_ANIMATIONS = ['ink', 'leaf', 'hearts', 'notes', 'snowflakes', 'embers'] as const;
 export type TickAnimation = 'default' | (typeof TICK_ANIMATIONS)[number];
 export const TICK_ANIMATION_NAMES: Record<TickAnimation, string> = {
-  default: 'Default',
-  sparks: 'Sparks',
-  ripple: 'Ripple',
+  default: 'Sparks',
   ink: 'Ink splash',
   leaf: 'Leaf',
+  hearts: 'Hearts',
+  notes: 'Notes',
+  snowflakes: 'Snowflakes',
+  embers: 'Embers',
 };
+
+/** A saved animation that no longer exists (or none) falls back to the default. */
+export function normalizeAnimation(value: unknown): TickAnimation {
+  return (TICK_ANIMATIONS as readonly unknown[]).includes(value)
+    ? (value as TickAnimation)
+    : 'default';
+}
 
 export const HABIT_ICON_GROUPS = [
   'Health',
@@ -123,7 +133,7 @@ export interface Cosmetic {
   value: string;
 }
 
-/** Everything that can be bought or won: 12 colors, 4 animations, 30 icons (13.12). */
+/** Everything that can be bought or won: 12 colors, 6 animations, 30 icons (13.12). */
 export const COSMETICS: readonly Cosmetic[] = [
   ...EXTRA_LIST_COLORS.map((hex) => ({
     id: `color:${EXTRA_COLOR_NAMES[hex].toLowerCase()}`,

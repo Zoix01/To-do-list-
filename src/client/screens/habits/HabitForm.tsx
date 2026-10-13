@@ -1,7 +1,7 @@
 import { Minus, Plus } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { WEIGHT_DEFAULT, WEEKLY_BUDGET } from '../../../shared/economy';
-import type { HabitIcon } from '../../../shared/cosmetics';
+import type { HabitIcon, TickAnimation } from '../../../shared/cosmetics';
 import { normalizeHabitRules } from '../../../shared/habits';
 import {
   LIST_COLORS,
@@ -13,6 +13,7 @@ import {
 import { ColorPicker } from '../../components/ColorPicker';
 import { Segmented, WeekdayPicker } from '../../components/pickers';
 import { HabitIconPicker } from '../../components/HabitIconPicker';
+import { HabitAnimationPicker } from './HabitAnimationPicker';
 import { WeightField } from '../../components/WeightField';
 import { errorMessage } from '../../lib/api';
 import { useApp } from '../../lib/appContext';
@@ -39,6 +40,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
   const [target, setTarget] = useState<number>(habit?.target ?? 3);
   const [weight, setWeight] = useState<number>(habit?.weight ?? WEIGHT_DEFAULT);
   const [icon, setIcon] = useState<string | null>(habit?.icon ?? null);
+  const [tickAnimation, setTickAnimation] = useState<string | null>(habit?.tickAnimation ?? null);
   const { data: templates } = useRecurring();
   const { data: rewards } = useRewards();
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +78,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
       color,
       weight,
       icon: icon as HabitIcon | null,
+      tickAnimation: tickAnimation as TickAnimation | null,
       ...normalized.rules,
     };
     try {
@@ -163,6 +166,15 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
         <span className="field-grid__label">Icon</span>
         <div className="field-grid__value">
           <HabitIconPicker value={icon} onChange={setIcon} disabled={!canEdit} />
+        </div>
+
+        <span className="field-grid__label">Animation</span>
+        <div className="field-grid__value">
+          <HabitAnimationPicker
+            value={tickAnimation}
+            onChange={setTickAnimation}
+            disabled={!canEdit}
+          />
         </div>
       </div>
 

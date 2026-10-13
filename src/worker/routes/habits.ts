@@ -26,7 +26,11 @@ export const habitRoutes = new Hono<AppEnv>()
   )
   .post('/', async (c) => {
     const input = await readBody(c, habitCreateSchema);
-    await assertCosmeticsAvailable(c.get('db'), { color: input.color, icon: input.icon });
+    await assertCosmeticsAvailable(c.get('db'), {
+      color: input.color,
+      icon: input.icon,
+      tickAnimation: input.tickAnimation,
+    });
     const normalized = normalizeHabitRules(input);
     if (!normalized.ok) throw badRequest(normalized.error);
     const habit: Habit = {
@@ -34,6 +38,7 @@ export const habitRoutes = new Hono<AppEnv>()
       name: input.name,
       color: input.color,
       icon: input.icon ?? null,
+      tickAnimation: input.tickAnimation ?? null,
       ...normalized.rules,
       archived: false,
       weight: input.weight ?? WEIGHT_DEFAULT,
@@ -46,7 +51,11 @@ export const habitRoutes = new Hono<AppEnv>()
     const input = await readBody(c, habitUpdateSchema);
     const db = c.get('db');
     const existing = await findHabit(db, c.req.param('id'));
-    await assertCosmeticsAvailable(db, { color: input.color, icon: input.icon });
+    await assertCosmeticsAvailable(db, {
+      color: input.color,
+      icon: input.icon,
+      tickAnimation: input.tickAnimation,
+    });
     const normalized = normalizeHabitRules({
       frequency: input.frequency ?? existing.frequency,
       weekdays: input.weekdays ?? existing.weekdays,

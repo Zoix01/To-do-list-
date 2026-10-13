@@ -57,6 +57,13 @@
       "when": 1791912997456,
       "tag": "0007_cosmetics",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791914153078,
+      "tag": "0008_habit_animation",
+      "breakpoints": true
     }
   ]
 }

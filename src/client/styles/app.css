@@ -1338,30 +1338,6 @@ body:has(.app--phone) .toast-region {
   }
 }
 
-.tick-effect__ring {
-  position: absolute;
-  inset: 7px;
-  border: 2px solid var(--effect-color);
-  border-radius: 50%;
-  opacity: 0;
-  animation: tick-ripple 700ms var(--ease-out);
-}
-
-.tick-effect__ring--late {
-  animation-delay: 180ms;
-}
-
-@keyframes tick-ripple {
-  0% {
-    opacity: 0.8;
-    transform: scale(0.7);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2);
-  }
-}
-
 .tick-effect__blot {
   position: absolute;
   inset: 6px;
@@ -1441,6 +1417,30 @@ body:has(.app--phone) .toast-region {
   100% {
     opacity: 0;
     transform: translate(calc(-50% + 14px), -16px) rotate(70deg);
+  }
+}
+
+.tick-effect__float {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: inline-flex;
+  color: var(--effect-color);
+  opacity: 0;
+  animation: tick-float 850ms var(--ease-out) both;
+}
+
+@keyframes tick-float {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6) rotate(0);
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(var(--rot));
   }
 }
 

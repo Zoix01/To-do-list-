@@ -134,6 +134,8 @@ export interface Habit {
   archived: boolean;
   /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
   weight: number;
+  /** Its own tick animation; null = the one chosen in Settings (SPEC §13.12). */
+  tickAnimation: string | null;
   createdAt: Timestamp;
 }
 

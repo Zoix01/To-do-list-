@@ -10,9 +10,9 @@ import {
 import { EXTRA_LIST_COLORS, LIST_COLORS } from './types';
 
 describe('cosmetics (13.12)', () => {
-  it('12 colors, 4 animations and 30 locked habit icons, each sold on its own', () => {
+  it('12 colors, 6 animations and 30 locked habit icons, each sold on its own', () => {
     const count = (kind: string) => COSMETICS.filter((c) => c.kind === kind).length;
-    expect([count('color'), count('animation'), count('icon')]).toEqual([12, 4, 30]);
+    expect([count('color'), count('animation'), count('icon')]).toEqual([12, 6, 30]);
     expect(new Set(COSMETICS.map((c) => c.id)).size).toBe(COSMETICS.length);
   });
 
@@ -39,7 +39,7 @@ describe('cosmetics (13.12)', () => {
     expect(iconAvailable('guitar', new Set(['icon:guitar']))).toBe(true);
     expect(iconAvailable('rocket', new Set(['icon:rocket']))).toBe(false);
     expect(animationAvailable('default', none)).toBe(true);
-    expect(animationAvailable('sparks', none)).toBe(false);
-    expect(animationAvailable('sparks', new Set(['animation:sparks']))).toBe(true);
+    expect(animationAvailable('hearts', none)).toBe(false);
+    expect(animationAvailable('hearts', new Set(['animation:hearts']))).toBe(true);
   });
 });

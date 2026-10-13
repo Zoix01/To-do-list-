@@ -944,3 +944,31 @@
   width: 48px;
   height: 48px;
 }
+
+/* A habit's own tick animation (SPEC §13.12). */
+.habit-animation {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.habit-animation__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.habit-animation__option {
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: var(--hairline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.habit-animation__option[aria-checked='true'] {
+  border-color: var(--accent);
+  color: var(--text);
+}

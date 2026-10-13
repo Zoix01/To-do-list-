@@ -88,6 +88,8 @@ export const recurringUpdateSchema = z
   .strict();
 export type RecurringUpdateInput = z.infer<typeof recurringUpdateSchema>;
 
+const tickAnimation = z.enum(['default', ...TICK_ANIMATIONS]);
+
 const habitName = z.string().trim().min(1, 'Name is required').max(100);
 
 export const habitCreateSchema = z.object({
@@ -98,6 +100,7 @@ export const habitCreateSchema = z.object({
   target: z.number().int().nullable().optional(),
   weight: weight.optional(),
   icon: z.enum(HABIT_ICON_NAMES).nullable().optional(),
+  tickAnimation: tickAnimation.nullable().optional(),
 });
 export type HabitCreateInput = z.infer<typeof habitCreateSchema>;
 
@@ -111,6 +114,7 @@ export const habitUpdateSchema = z
     archived: z.boolean(),
     weight,
     icon: z.enum(HABIT_ICON_NAMES).nullable(),
+    tickAnimation: tickAnimation.nullable(),
   })
   .partial()
   .strict();
@@ -167,9 +171,7 @@ export const vacationSchema = z.object({ date: isoDate });
 
 export const cosmeticBuySchema = z.object({ requestId: z.string().min(8).max(64) });
 
-export const appearanceSchema = z.object({
-  tickAnimation: z.enum(['default', ...TICK_ANIMATIONS]),
-});
+export const appearanceSchema = z.object({ tickAnimation });
 
 /** Settings → Gamification (SPEC §13.2). */
 export const economySchema = z.object({

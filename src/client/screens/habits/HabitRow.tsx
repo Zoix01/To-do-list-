@@ -32,7 +32,8 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
   const [burst, setBurst] = useState<Burst | null>(null);
   // Each tick replays the chosen tick animation (SPEC §13.12).
   const [effect, setEffect] = useState(0);
-  const animation = rewards?.tickAnimation ?? 'default';
+  // The habit's own animation, or the one chosen in Settings.
+  const animation = habit.tickAnimation ?? rewards?.tickAnimation ?? 'default';
   const checks = new Set(habit.checks);
   const checked = checks.has(today);
   const vacationDays = useVacationDays();
@@ -80,11 +81,7 @@ export function HabitRow({ habit }: { habit: HabitWithChecks }) {
   return (
     <li className={habit.archived ? 'task-row is-paused' : 'task-row'}>
       <span
-        className={[
-          'habit-tick',
-          popping && animation === 'default' && 'is-popping',
-          celebrating && 'is-celebrating',
-        ]
+        className={['habit-tick', popping && 'is-popping', celebrating && 'is-celebrating']
           .filter(Boolean)
           .join(' ')}
         style={{ '--habit-color': habit.color } as CSSProperties}

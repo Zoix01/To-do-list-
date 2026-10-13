@@ -1,6 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import {
   animationAvailable,
+  normalizeAnimation,
   colorAvailable,
   findCosmetic,
   iconAvailable,
@@ -25,7 +26,7 @@ export async function loadOwnedCosmetics(db: Db): Promise<Set<string>> {
 
 export async function loadTickAnimation(db: Db): Promise<string> {
   const row = await db.select().from(settings).where(eq(settings.key, 'tickAnimation')).get();
-  return typeof row?.value === 'string' ? row.value : 'default';
+  return normalizeAnimation(row?.value);
 }
 
 async function saveSetting(db: Db, key: string, value: unknown) {
@@ -38,15 +39,18 @@ async function saveSetting(db: Db, key: string, value: unknown) {
 /** Extra list colors and locked habit icons need to be owned (13.12). */
 export async function assertCosmeticsAvailable(
   db: Db,
-  input: { color?: string; icon?: string | null },
+  input: { color?: string; icon?: string | null; tickAnimation?: string | null },
 ): Promise<void> {
-  if (input.color === undefined && !input.icon) return;
+  if (input.color === undefined && !input.icon && !input.tickAnimation) return;
   const owned = await loadOwnedCosmetics(db);
   if (input.color !== undefined && !colorAvailable(input.color, owned)) {
     throw badRequest('Unlock this color in the Shop first');
   }
   if (input.icon && !iconAvailable(input.icon, owned)) {
     throw badRequest('Unlock this icon in the Shop first');
+  }
+  if (input.tickAnimation && !animationAvailable(input.tickAnimation, owned)) {
+    throw badRequest('Unlock this animation in the Shop first');
   }
 }
 
@@ -97,7 +101,9 @@ export async function refundCosmetic(db: Db, today: ISODate, cosmeticId: string)
   const cosmetic = findCosmetic(cosmeticId);
   if (!cosmetic) throw notFound('Cosmetic not found');
   const inUse =
-    (cosmetic.kind === 'animation' && (await loadTickAnimation(db)) === cosmetic.value) ||
+    (cosmetic.kind === 'animation' &&
+      ((await loadTickAnimation(db)) === cosmetic.value ||
+        (await db.select().from(habits).where(eq(habits.tickAnimation, cosmetic.value)).get()))) ||
     (cosmetic.kind === 'color' &&
       ((await db
         .select()

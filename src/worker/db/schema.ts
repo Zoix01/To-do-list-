@@ -92,6 +92,8 @@ export const habits = sqliteTable('habits', {
   archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
   /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
   weight: integer('weight').notNull().default(5),
+  /** Its own tick animation; null = the one chosen in Settings (SPEC §13.12). */
+  tickAnimation: text('tick_animation'),
   createdAt: text('created_at').notNull(),
 });
 
