@@ -495,10 +495,10 @@ Prices are derived from `TYPICAL_WEEK` (7,000) and rounded to PRICE_ROUNDING:
 
 | Item | Formula | Price at defaults |
 |---|---|---|
-| Mystery box | TYPICAL_WEEK × 0.5 / 2.5 | 1,500 |
-| Streak freeze | = box | 1,500 |
-| Vacation day | = box × 0.5 | 750 |
-| Cosmetic (each) | = box × 1.2 | 1,800 |
+| Mystery box | TYPICAL_WEEK × 0.5 / 3 | 1,250 |
+| Streak freeze | = box | 1,250 |
+| Vacation day | = box × 0.5 | 650 |
+| Cosmetic (each) | = box × 1.44 | 1,800 |
 | Real-life reward | set by me | — |
 
 Lucky charms and coin pouches can't be bought; they only come from boxes.
@@ -745,7 +745,7 @@ Unit tests (Vitest) with a seeded RNG where randomness is involved:
 **Balance simulation** (a test that prints a report and doesn't fail on the result):
 - The player has 3 daily habits (Normal, Normal, Important), a Mon–Fri habit (Normal), a 3× a week habit (Important), 2 weekly tasks (Normal, Light) and a monthly task (Normal).
 - They complete 75% of everything at random (≈ 0.75 of the maximum income) and arm a freeze on their best streak whenever they own one.
-- They spend 50% of their income on boxes, open every box, and spend shards on missing pieces, legendary first. Three 13-week seasons are played in a row; shards carry over.
+- They spend 50% of their income on boxes, open every box, and spend shards on missing pieces, legendary first. Six 13-week seasons are played in a row (78 weeks, up to level 27); shards carry over.
 
 Report:
 - typical weekly income
@@ -753,7 +753,7 @@ Report:
 - weeks to complete a regular 13-week season, and the share of the season completed by week 13
 - weeks to reach level 10
 
-The design target is that this player can finish each season's collection within its 13 weeks (counting milestone and level-up boxes), and reaches level 10 in 8–13 weeks. With a box at 1,500 coins the simulation finishes the collections around weeks 9–12 and reaches level 10 in week 12. If results miss these, report the numbers and propose config changes. Don't apply them.
+The design target is that this player can finish each season's collection within its 13 weeks (counting milestone and level-up boxes), also at level 20 and beyond when free boxes get rare, and reaches level 10 in 8–13 weeks. With a box at 1,250 coins the simulation finishes every season's collection between weeks 5 and 13 (also seasons 5–6, from level 24–27) and reaches level 10 in week 12; at 1,500 the late seasons ended a few pieces short. If results miss these, report the numbers and propose config changes. Don't apply them.
 
 ---
 

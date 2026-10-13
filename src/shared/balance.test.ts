@@ -54,11 +54,14 @@ const RECURRING: { id: string; importance: Importance; monthly: boolean }[] = [
 const COMPLETION = 0.75;
 const SPEND_SHARE = 0.5;
 const SEASON_WEEKS = 13;
-const SEASON_COUNT = 3;
+/** Six seasons (78 weeks) reach level 20+, where level-up and milestone boxes are rare. */
+const SEASON_COUNT = 6;
 
 interface SeasonResult {
   completeWeek: number | null;
   shareAtEnd: number;
+  levelAtStart: number;
+  boxes: number;
 }
 
 interface Run {
@@ -119,7 +122,12 @@ export function simulate(rng: Rng, boxPrice?: number): Run {
   for (let s = 0; s < SEASON_COUNT; s++) {
     const pieces = piecesOf(SEASONS[(s + 1) % SEASONS.length]!);
     const owned = new Set<string>();
-    const result: SeasonResult = { completeWeek: null, shareAtEnd: 0 };
+    const result: SeasonResult = {
+      completeWeek: null,
+      shareAtEnd: 0,
+      levelAtStart: level,
+      boxes: 0,
+    };
     for (let w = 0; w < SEASON_WEEKS; w++) {
       const week = s * SEASON_WEEKS + w;
       let income = 0;
@@ -242,6 +250,7 @@ export function simulate(rng: Rng, boxPrice?: number): Run {
         }
       }
 
+      result.boxes += bought + milestoneBoxes + levelBoxes;
       run.income.push(income);
       run.bought.push(bought);
       run.milestone.push(milestoneBoxes);
@@ -268,12 +277,11 @@ export function report(title: string, runs: Run[]): string {
     title,
     `  Weekly income: ${fmt(weekly('income', 0, total), 0)} coins (budget ${WEEKLY_BUDGET})`,
     `  Boxes per week, season 1: ${boxes(0, SEASON_WEEKS)}`,
-    `  Boxes per week, later seasons: ${boxes(SEASON_WEEKS, total)}`,
   ];
   for (let s = 0; s < SEASON_COUNT; s++) {
     const weeks = runs.map((run) => run.seasons[s]!.completeWeek);
     lines.push(
-      `  Season ${s + 1} complete in week: ${weeks.map((w) => w ?? '—').join(', ')}; owned at its end: ${fmt(mean(runs.map((run) => run.seasons[s]!.shareAtEnd)) * 100, 0)}%`,
+      `  Season ${s + 1} (from level ${fmt(mean(runs.map((run) => run.seasons[s]!.levelAtStart)), 0)}): ${fmt(mean(runs.map((run) => run.seasons[s]!.boxes)) / SEASON_WEEKS)} boxes/week, complete in week ${weeks.map((w) => w ?? '—').join(', ')}; owned at its end: ${fmt(mean(runs.map((run) => run.seasons[s]!.shareAtEnd)) * 100, 0)}%`,
     );
   }
   const level10 = runs.map((run) => run.level10Week);

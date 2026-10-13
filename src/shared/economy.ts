@@ -99,16 +99,17 @@ export const BOXES_PER_LEVEL = 1;
 
 /**
  * Mystery box price = TYPICAL_WEEK × BOX_PRICE_SHARE / BOXES_PER_TYPICAL_WEEK (13.6):
- * spending half of a typical week buys 2.5 boxes. With the free milestone and
- * level-up boxes, that finishes a season's collection in about 9–12 of its 13
- * weeks (see the balance simulation).
+ * spending half of a typical week buys 3 boxes (1,250 coins each). With the free
+ * milestone and level-up boxes, that finishes each season's collection within
+ * its 13 weeks, also at level 20+ when free boxes are rare (balance simulation).
  */
 export const BOX_PRICE_SHARE = 0.5;
-export const BOXES_PER_TYPICAL_WEEK = 2.5;
+export const BOXES_PER_TYPICAL_WEEK = 3;
 /** Other prices as a multiple of the box price (13.6). */
 export const FREEZE_PRICE_IN_BOXES = 1;
 export const VACATION_PRICE_IN_BOXES = 0.5;
-export const COSMETIC_PRICE_IN_BOXES = 1.2;
+/** Cosmetics: a bit more than a box, 1,800 at the defaults. */
+export const COSMETIC_PRICE_IN_BOXES = 1.44;
 /** A purchase can be undone this long after buying (the toast shows for 5 s; 13.18). */
 export const REFUND_WINDOW_SECONDS = 30;
 /** Price range of a real-life reward (13.6). */

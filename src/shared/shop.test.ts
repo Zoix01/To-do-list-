@@ -7,14 +7,14 @@ const defaults = { weeklyBudget: WEEKLY_BUDGET, expectedRate: EXPECTED_RATE };
 describe('shop prices (13.6)', () => {
   it('match the table at the defaults', () => {
     expect(shopPrices(defaults)).toEqual({
-      box: 1500,
-      freeze: 1500,
-      vacation: 750,
+      box: 1250,
+      freeze: 1250,
+      vacation: 650,
       cosmetic: 1800,
     });
   });
   it('follow the settings', () => {
-    expect(shopPrices({ weeklyBudget: 20000, expectedRate: 0.5 }).box).toBe(2000);
+    expect(shopPrices({ weeklyBudget: 20000, expectedRate: 0.5 }).box).toBe(1650); // 1,666.7
   });
 });
 
