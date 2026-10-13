@@ -508,6 +508,7 @@ No limits or cooldowns. Placeholder examples are shown in the empty state (e.g. 
 **Opening**
 - Boxes go to the Inventory; I open them there, one at a time.
 - The result is decided **on the server** using a cryptographically secure random generator, stored, and only then animated. Reloading or double-tapping can never re-roll or open twice.
+- A box has no season of its own: its contents come from the season that's current when it's **opened**.
 
 **Contents** (exactly one result per box):
 
@@ -566,12 +567,16 @@ There's no pity rule.
 - When that habit misses a period (a scheduled day, a week below target, or a month below target), one armed freeze is consumed **automatically** after the period ends, and the streak continues.
 - A frozen period shows an ice icon in the heatmap. It doesn't add to the streak length and earns nothing.
 - An unused armed freeze can be un-armed back to the Inventory.
+- A freeze must be armed **before** the miss: it stays armed (for days or months) until the habit misses a period that ends after it was armed, and only then is it used. Arming it after a miss doesn't repair the streak.
+- A freeze is only used if there's a streak of at least 1 to protect.
+- If a frozen period is later back-filled until it's met, the freeze returns to that habit, still armed.
 
 **Vacation day** (1 item = 1 day)
 - Using one asks for a date: today or any future date.
 - On that day **all habits are paused**: nothing is due, nothing breaks a streak or uses a freeze, and the day doesn't add to streak length. It shows a vacation marker in the heatmaps.
 - **Weekly tasks are not paused.**
-- For per_week and per_month habits, the period's target is reduced proportionally to the vacation days in that period (rounded down). Value per completion stays as in the snapshot.
+- For per_week and per_month habits, the period's target is reduced proportionally to the vacation days in that period (rounded down). Value per completion stays as in the snapshot. If the reduced target is 0, the whole period counts as paused: it neither adds to the streak nor breaks it.
+- Ticking a habit on a vacation day is allowed and pays like a normal tick, but the day still doesn't add to the streak. On a vacation day, habits show on Today only if they're already ticked.
 - Several vacation days can be used for consecutive dates.
 - A future vacation day can be cancelled, which returns it to the Inventory.
 
@@ -642,7 +647,9 @@ Cosmetics are owned forever and unlock immediately when bought or won. They're m
 
 **Seasons**
 - Seasons are meteorological, in Europe/Prague: spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb.
-- **Season 1 is longer:** "Autumn–Winter 2026/27" runs from **19 Oct 2026** (`GAMIFICATION_START`) until 28 Feb 2027. Regular seasons start on 1 Mar 2027.
+- **Season 1 is longer:** "Winter 2026/27" runs from **19 Oct 2026** (`GAMIFICATION_START`) until 28 Feb 2027. Regular seasons start on 1 Mar 2027.
+- Each season's art is **inspired by that season of the year** (Season 1: winter, then spring, summer, autumn). The art is the only thing that changes between seasons.
+- If no newer season has started when one ends, the latest season that has started stays the current one (its "days left" shows "Ended"), so boxes are never empty.
 
 **Collections**
 - Each season has **4 artworks × 6 pieces = 24 pieces**.
@@ -650,7 +657,7 @@ Cosmetics are owned forever and unlock immediately when bought or won. They're m
 - Each artwork has **4 common, 1 rare and 1 legendary** piece. The most striking part of the artwork is the legendary piece, the second most striking is the rare one; set these in the season config.
 
 **Season config**
-- One file per season, e.g. `seasons/2026-autumn-winter.json`, containing:
+- One file per season, e.g. `seasons/2026-27-winter.json`, containing:
   - id, name, start and end date
   - per artwork: title, artist, year, image file, grid, rarity of each piece, source URL and license
 - Adding a season means adding a file plus images, with no code changes.
@@ -662,12 +669,8 @@ Cosmetics are owned forever and unlock immediately when bought or won. They're m
 - Pieces are rendered from the single image with CSS (background-position), not as pre-cut files.
 
 **Planned seasons**
-- Season 1 (Autumn–Winter 2026/27): Alfons Mucha, *The Seasons* (1896), the four panels
-- Spring 2027: Vincent van Gogh, four spring or blossom paintings (e.g. *Almond Blossom*)
-- Summer 2027: Claude Monet, four summer paintings
-- Autumn 2027: Katsushika Hokusai, four prints from *Thirty-six Views of Mount Fuji*
-
-Only Season 1 is built in Phase 5. Prepare the others' configs only if I ask.
+- Phase 5 prepares the **first full year**: Winter 2026/27 (Season 1), Spring 2027, Summer 2027 and Autumn 2027.
+- Claude chooses the artworks, so they stay a surprise: they're not named in chat or in this spec, only in the season files and `CREDITS.md`.
 
 **End of season:** its pieces leave the boxes. Missing pieces stay buyable with shards at past-season prices.
 
@@ -741,9 +744,27 @@ Stop after each step so I can test:
 
 1. Weights, week snapshots, earning, ledger, XP and levels, milestones, header, habit values and multipliers in the UI, default tick animation
 2. Shop and Inventory: real-life rewards (manage view, icon picker, price hint), freezes, vacation days, purchase undo, History
-3. Season 1, mystery boxes, box opening animation, lucky charm, coin pouch, shards, Gallery, `CREDITS.md`
+3. Season 1 (and the art for the rest of the first year), mystery boxes, box opening animation, lucky charm, coin pouch, shards, Gallery, `CREDITS.md`
 4. Cosmetics: extra list colors, 4 tick animations, Settings → Appearance and Gamification
 5. `get_rewards` MCP tool and the `list_habits` additions, README update, balance simulation report
+
+---
+
+### 13.18 Phase 5 decisions
+
+- **Time zone:** "Europe/Prague" in §13 means the `TIMEZONE` setting, so other deployments work too.
+- **Snapshots** are created lazily on the first request of a week (missing weeks are filled in too). No cron job.
+- **Settings → Gamification:** a budget change applies from the next snapshot; prices change immediately.
+- **"This week"** in the header counts coins by the week the tick or weekly task belongs to.
+- **Habit value shown:** what the next tick would pay, plus the multiplier, e.g. "+430 · ×1.3".
+- **Over target:** the cap counts ticks already paid in the period, so unticking and ticking another day can't pay past the target.
+- **Streak milestones** are checked only when a tick extends a streak, never on an untick.
+- **Weekly task completed:** the coins are added to the existing completion toast, e.g. "Completed · +500".
+- **Cosmetics icon:** palette (§14 rules out sparkle icons).
+- **Lucky charm:** only one can be active at a time.
+- **Purchase undo:** the toast shows for 5 seconds; the server accepts the refund for about 30 seconds.
+- **Wallet** is derived from the ledger (the sum of its rows), not stored separately. Spends are ledger rows too, inserted only if the sum covers the price, in one D1 batch with the inventory change; each request carries an ID that becomes part of the ledger key, so a double tap can't buy twice.
+- **Extra list colors** (cosmetics, after the base 12 in the picker): Sand `#C9B98A`, Pear `#B8C27A`, Sage `#93BC8F`, Seafoam `#6FB7A8`, Sky `#7FB4CF`, Cornflower `#9AA6D8`, Lilac `#C6A0DA`, Pink `#D490B8`, Peach `#E2A48C`, Ochre `#C49A62`, Stone `#B9AFA4`, Lichen `#8FA7A0`. All pass AA as text on `--bg` and `--surface`.
 
 ---
 
