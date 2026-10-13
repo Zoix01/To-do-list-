@@ -308,7 +308,7 @@ export function levelInfo(xp: number): LevelInfo {
 // ---------------------------------------------------------------- Ledger entries
 
 export type LedgerKind =
-  'tick' | 'weekly' | 'streak' | 'count' | 'level' | 'buy' | 'refund' | 'use';
+  'tick' | 'weekly' | 'streak' | 'count' | 'level' | 'buy' | 'refund' | 'use' | 'box' | 'shards';
 
 export interface LedgerEntry {
   key: string;

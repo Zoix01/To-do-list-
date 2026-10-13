@@ -90,3 +90,26 @@ export const REFUND_WINDOW_SECONDS = 30;
 /** Price range of a real-life reward (13.6). */
 export const REWARD_PRICE_MIN = 1;
 export const REWARD_PRICE_MAX = 1_000_000;
+
+/** What a mystery box contains, exactly one result per box (13.7). */
+export const BOX_ODDS = {
+  piece: 0.7,
+  pouch: 0.07,
+  charm: 0.06,
+  freeze: 0.05,
+  vacation: 0.05,
+  reward: 0.05,
+  cosmetic: 0.02,
+} as const;
+/** Rarity of an art piece from a box (13.7). */
+export const TIER_ODDS = { common: 0.7, rare: 0.25, legendary: 0.05 } as const;
+/** Shards for a duplicate piece (13.7). */
+export const DUPLICATE_SHARDS = { common: 10, rare: 20, legendary: 50 } as const;
+/** Shard price of a missing piece of the current season (13.8). */
+export const PIECE_SHARD_PRICES = { common: 40, rare: 60, legendary: 80 } as const;
+/** Pieces of past seasons cost this much more (13.8). */
+export const PAST_SEASON_PRICE_FACTOR = 1.5;
+/** Coin pouch = box price × (POUCH_MIN + POUCH_SPREAD × u^POUCH_EXPONENT), u in [0, 1) (13.7). */
+export const POUCH_MIN = 0.1;
+export const POUCH_SPREAD = 4.9;
+export const POUCH_EXPONENT = 2.5;

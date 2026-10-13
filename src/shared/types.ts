@@ -215,11 +215,13 @@ export interface InventoryItem {
 /** One line of the History (SPEC §13.10), newest first. */
 export interface HistoryEntry {
   key: string;
-  kind: 'ticks' | 'weekly' | 'streak' | 'count' | 'level' | 'buy' | 'refund' | 'use';
+  kind:
+    'ticks' | 'weekly' | 'streak' | 'count' | 'level' | 'buy' | 'refund' | 'use' | 'box' | 'shards';
   /** The day it belongs to. */
   date: ISODate;
   createdAt: Timestamp;
   coins: number;
+  shards: number;
   boxes: number;
   /** Habit, recurring task or item name, when there is one. */
   name: string | null;
@@ -230,4 +232,28 @@ export interface HistoryEntry {
 export interface InventoryView {
   items: InventoryItem[];
   history: HistoryEntry[];
+}
+
+/** A box's stored result (SPEC §13.7); the app animates it. */
+export interface BoxOpening {
+  boxId: string;
+  type: 'piece' | 'pouch' | 'charm' | 'freeze' | 'vacation' | 'reward' | 'cosmetic';
+  tier: 'common' | 'rare' | 'legendary' | null;
+  pieceId: string | null;
+  seasonId: string | null;
+  duplicate: boolean;
+  shards: number;
+  coins: number;
+  rewardId: string | null;
+  rewardName: string | null;
+  cosmeticId: string | null;
+  charmUsed: boolean;
+  createdAt: Timestamp;
+}
+
+export interface OwnedPiece {
+  pieceId: string;
+  seasonId: string;
+  acquiredAt: Timestamp;
+  source: 'box' | 'shards';
 }
