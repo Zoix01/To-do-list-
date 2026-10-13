@@ -47,7 +47,10 @@ export interface Task {
   /** True once the planned date was set or cleared by hand. */
   plannedManual: boolean;
   recurringId: string | null;
+  /** Start of a recurring instance's period: its Monday, or the 1st for monthly ones (SPEC §6.1). */
   weekStart: ISODate | null;
+  /** Tells instances of the same period apart (day of month, or k of N); 0 for weekly ones. */
+  occurrence: number;
   completedAt: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -62,7 +65,10 @@ export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export const RECURRING_MODES = ['fixed', 'flexible'] as const;
 export type RecurringMode = (typeof RECURRING_MODES)[number];
 
-/** Template that creates one task per week (SPEC §6). */
+export const RECURRING_PERIODS = ['week', 'month'] as const;
+export type RecurringPeriod = (typeof RECURRING_PERIODS)[number];
+
+/** Template that creates tasks every week or month (SPEC §6). */
 export interface RecurringTask {
   id: string;
   listId: string | null;
@@ -70,8 +76,14 @@ export interface RecurringTask {
   notes: string | null;
   priority: Priority;
   mode: RecurringMode;
-  /** Only for 'fixed'. */
+  /** Repeats every week or every month (SPEC §6.1). */
+  period: RecurringPeriod;
+  /** Weekly 'fixed' only. */
   weekday: Weekday | null;
+  /** Monthly 'fixed' only: days of the month, 1–31, sorted. */
+  monthDays: number[];
+  /** Monthly 'flexible' only: tasks per month, 1–10. */
+  timesPerMonth: number | null;
   active: boolean;
   /** Date it was created or last resumed; fixed weekdays before it are skipped. */
   activeFrom: ISODate;

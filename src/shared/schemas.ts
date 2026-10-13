@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import { isISODate } from './dates';
 import { WEIGHT_MAX, WEIGHT_MIN } from './economy';
-import { HABIT_FREQUENCIES, LIST_COLORS, PRIORITIES, RECURRING_MODES } from './types';
+import {
+  HABIT_FREQUENCIES,
+  LIST_COLORS,
+  PRIORITIES,
+  RECURRING_MODES,
+  RECURRING_PERIODS,
+} from './types';
 
 const isoDate = z.string().refine(isISODate, 'Must be a date in YYYY-MM-DD format');
 const title = z.string().trim().min(1, 'Title is required').max(500);
@@ -43,14 +49,21 @@ const weekday = z.union([
   z.literal(7),
 ]);
 
+const monthDays = z.array(z.number().int().min(1).max(31)).max(31);
+
 export const recurringCreateSchema = z.object({
   title,
   notes: notes.optional(),
   priority: z.enum(PRIORITIES).optional(),
   listId: z.string().nullable().optional(),
+  period: z.enum(RECURRING_PERIODS).optional(),
   mode: z.enum(RECURRING_MODES),
-  /** Required for 'fixed'. */
+  /** Weekly 'fixed'. */
   weekday: weekday.nullable().optional(),
+  /** Monthly 'fixed'. */
+  monthDays: monthDays.optional(),
+  /** Monthly 'flexible'. */
+  timesPerMonth: z.number().int().nullable().optional(),
   weight: weight.optional(),
 });
 export type RecurringCreateInput = z.infer<typeof recurringCreateSchema>;
@@ -61,8 +74,11 @@ export const recurringUpdateSchema = z
     notes,
     priority: z.enum(PRIORITIES),
     listId: z.string().nullable(),
+    period: z.enum(RECURRING_PERIODS),
     mode: z.enum(RECURRING_MODES),
     weekday: weekday.nullable(),
+    monthDays,
+    timesPerMonth: z.number().int().nullable(),
     active: z.boolean(),
     weight,
   })

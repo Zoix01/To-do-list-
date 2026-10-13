@@ -12,7 +12,8 @@ import {
   XP_PER_COIN,
 } from './economy';
 import { isScheduled, runsAround, streakBefore } from './habits';
-import type { Habit, ISODate } from './types';
+import { tasksPerPeriod } from './recurrence';
+import type { Habit, ISODate, RecurringTask } from './types';
 
 /*
  * Earning rules of the gamification (SPEC §13.3–13.5), as pure functions. The
@@ -28,8 +29,16 @@ export interface EconomyItem {
   type: EconomyItemType;
   id: string;
   weight: number;
-  /** Habit rules, or null for a weekly task. */
+  /** Habit rules (a monthly template counts as a per_month habit), or null for a weekly task. */
   rules: HabitRules | null;
+}
+
+/** A recurring template's rules for the economy: weekly = 1 a week, monthly = N a month (§6.1). */
+export function templateRules(
+  template: Pick<RecurringTask, 'period' | 'mode' | 'weekday' | 'monthDays' | 'timesPerMonth'>,
+): HabitRules | null {
+  if (template.period === 'week') return null;
+  return { frequency: 'per_month', weekdays: [], target: tasksPerPeriod(template) };
 }
 
 export function roundTo(value: number, step: number): number {
@@ -68,7 +77,13 @@ export function snapshotItems(
     createdOn: ISODate;
     rules: HabitRules;
   }[],
-  templates: { id: string; weight: number; active: boolean; createdOn: ISODate }[],
+  templates: {
+    id: string;
+    weight: number;
+    active: boolean;
+    createdOn: ISODate;
+    rules: HabitRules | null;
+  }[],
   weekStart: ISODate,
 ): EconomyItem[] {
   return [
@@ -86,7 +101,7 @@ export function snapshotItems(
         type: 'weekly' as const,
         id: template.id,
         weight: template.weight,
-        rules: null,
+        rules: template.rules,
       })),
   ];
 }
@@ -240,8 +255,9 @@ export function tickReward(input: TickRewardInput): Reward {
 
 export interface WeeklyRewardInput {
   templateId: string;
+  /** Monday of the week the task's deadline falls in (§6.1). */
   weekStart: ISODate;
-  /** The template's value in the instance's week; null = not in that snapshot. */
+  /** The template's value in that week; null = not in that snapshot. */
   value: number | null;
   /** Completed instances of the template before this one. */
   completedBefore: number;
@@ -356,7 +372,7 @@ export function levelEntries(totalXp: number, date: ISODate): LedgerEntry[] {
 
 export interface CatchUpInput {
   habits: { id: string; rules: HabitRules; checks: ISODate[] }[];
-  /** Completed weekly-task instances, in completion order. */
+  /** Completed recurring tasks, in completion order; weekStart = Monday of the deadline's week. */
   weekly: { taskId: string; templateId: string; weekStart: ISODate; completedOn: ISODate }[];
   /** Value per completion from the week snapshots; null = not in the snapshot. */
   valueOf: (type: EconomyItemType, id: string, weekStart: ISODate) => number | null;

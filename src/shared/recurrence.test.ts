@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { instanceFor, planGeneration } from './recurrence';
+import {
+  describeSchedule,
+  instanceFor,
+  monthlyInstances,
+  normalizeSchedule,
+  planGeneration,
+} from './recurrence';
 import type { RecurringTask } from './types';
 
 function template(fields: Partial<RecurringTask> = {}): RecurringTask {
@@ -9,8 +15,11 @@ function template(fields: Partial<RecurringTask> = {}): RecurringTask {
     title: 'Vynést koš',
     notes: null,
     priority: 'medium',
+    period: 'week',
     mode: 'fixed',
     weekday: 2, // Tuesday
+    monthDays: [],
+    timesPerMonth: null,
     active: true,
     activeFrom: '2026-10-05',
     generatedThrough: null,
@@ -24,6 +33,7 @@ describe('instanceFor', () => {
   it('fixed: deadline = planned date = that weekday of the week', () => {
     expect(instanceFor(template({ weekday: 2 }), '2026-10-12')).toEqual({
       weekStart: '2026-10-12',
+      occurrence: 0,
       deadline: '2026-10-13',
       plannedDate: '2026-10-13',
     });
@@ -34,6 +44,7 @@ describe('instanceFor', () => {
   it('flexible: deadline = Sunday, unplanned', () => {
     expect(instanceFor(template({ mode: 'flexible', weekday: null }), '2026-10-12')).toEqual({
       weekStart: '2026-10-12',
+      occurrence: 0,
       deadline: '2026-10-18',
       plannedDate: null,
     });
@@ -140,5 +151,84 @@ describe('planGeneration', () => {
       includeNextWeek: true,
     });
     expect(plan.create.map((i) => i.deadline)).toEqual(['2027-01-05']);
+  });
+});
+
+describe('monthly (§6.1)', () => {
+  const setDays = (...monthDays: number[]) =>
+    template({ period: 'month', mode: 'fixed', weekday: null, monthDays });
+  const times = (timesPerMonth: number) =>
+    template({ period: 'month', mode: 'flexible', weekday: null, timesPerMonth });
+  const dates = (list: { deadline: string }[]) => list.map((i) => i.deadline);
+
+  it('set days: planned and due on each day', () => {
+    const list = monthlyInstances(setDays(1, 15), '2026-11-01');
+    expect(list).toEqual([
+      { weekStart: '2026-11-01', occurrence: 1, deadline: '2026-11-01', plannedDate: '2026-11-01' },
+      {
+        weekStart: '2026-11-01',
+        occurrence: 15,
+        deadline: '2026-11-15',
+        plannedDate: '2026-11-15',
+      },
+    ]);
+  });
+
+  it('set days: 29–31 mean the last day; one task per date', () => {
+    expect(dates(monthlyInstances(setDays(30, 31), '2027-02-01'))).toEqual(['2027-02-28']);
+    expect(dates(monthlyInstances(setDays(31), '2026-11-01'))).toEqual(['2026-11-30']);
+  });
+
+  it('N times: deadlines spread over the month, unplanned', () => {
+    expect(dates(monthlyInstances(times(1), '2026-11-01'))).toEqual(['2026-11-30']);
+    expect(dates(monthlyInstances(times(2), '2026-10-01'))).toEqual(['2026-10-15', '2026-10-31']);
+    expect(dates(monthlyInstances(times(3), '2027-02-01'))).toEqual([
+      '2027-02-10',
+      '2027-02-20',
+      '2027-02-28',
+    ]);
+    expect(monthlyInstances(times(4), '2026-10-01').map((i) => i.occurrence)).toEqual([1, 2, 3, 4]);
+    expect(monthlyInstances(times(2), '2026-10-01').every((i) => i.plannedDate === null)).toBe(
+      true,
+    );
+  });
+
+  it('first month: only what is due from the start day on', () => {
+    const plan = planGeneration({ ...times(2), activeFrom: '2026-10-20' }, '2026-10-20');
+    expect(dates(plan.create)).toEqual(['2026-10-31']);
+    expect(plan.generatedThrough).toBe('2026-10-01');
+  });
+
+  it('each month once; completing doesn’t create next month early', () => {
+    const t = { ...setDays(5), activeFrom: '2026-10-01', generatedThrough: '2026-10-01' };
+    expect(planGeneration(t, '2026-10-20', { includeNextWeek: true }).create).toEqual([]);
+    const next = planGeneration(t, '2026-11-02');
+    expect(dates(next.create)).toEqual(['2026-11-05']);
+    expect(next.generatedThrough).toBe('2026-11-01');
+  });
+
+  it('validates the schedule', () => {
+    expect(normalizeSchedule({ period: 'month', mode: 'fixed', monthDays: [] }).ok).toBe(false);
+    expect(normalizeSchedule({ period: 'month', mode: 'flexible', timesPerMonth: 11 }).ok).toBe(
+      false,
+    );
+    expect(normalizeSchedule({ period: 'month', mode: 'fixed', monthDays: [15, 1, 15] })).toEqual({
+      ok: true,
+      schedule: {
+        period: 'month',
+        mode: 'fixed',
+        weekday: null,
+        monthDays: [1, 15],
+        timesPerMonth: null,
+      },
+    });
+    expect(normalizeSchedule({ mode: 'fixed' }).ok).toBe(false);
+  });
+
+  it('describes the schedule', () => {
+    const name = () => 'Tue';
+    expect(describeSchedule(template(), name)).toBe('Every Tue');
+    expect(describeSchedule(setDays(1, 15, 22), name)).toBe('On the 1st, 15th and 22nd');
+    expect(describeSchedule(times(2), name)).toBe('2× a month');
   });
 });

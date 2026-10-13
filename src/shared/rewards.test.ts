@@ -10,6 +10,7 @@ import {
   snapshotItems,
   snapshotValues,
   streakMultiplier,
+  templateRules,
   tickPay,
   tickReward,
   weeklyReward,
@@ -83,7 +84,7 @@ describe('normalization (13.3)', () => {
 
   it('only items created before the Monday are in its snapshot', () => {
     const habit = { id: 'h', weight: 5, archived: false, rules: daily };
-    const template = { id: 't', weight: 5, active: true };
+    const template = { id: 't', weight: 5, active: true, rules: null };
     const week = '2026-10-26';
     const ids = (list: EconomyItem[]) => list.map((item) => item.id);
     expect(
@@ -106,6 +107,29 @@ describe('normalization (13.3)', () => {
         ),
       ),
     ).toEqual([]);
+  });
+});
+
+describe('monthly templates (§6.1)', () => {
+  it('count like a per_month habit with N completions', () => {
+    const rules = templateRules({
+      period: 'month',
+      mode: 'flexible',
+      weekday: null,
+      monthDays: [],
+      timesPerMonth: 2,
+    });
+    expect(rules).toEqual({ frequency: 'per_month', weekdays: [], target: 2 });
+    expect(completionsPerWeek(rules)).toBeCloseTo(24 / 52);
+    expect(
+      templateRules({
+        period: 'week',
+        mode: 'fixed',
+        weekday: 2,
+        monthDays: [],
+        timesPerMonth: null,
+      }),
+    ).toBeNull();
   });
 });
 

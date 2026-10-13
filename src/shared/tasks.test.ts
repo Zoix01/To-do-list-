@@ -34,6 +34,7 @@ function task(fields: Partial<Task> = {}): Task {
     plannedManual: false,
     recurringId: null,
     weekStart: null,
+    occurrence: 0,
     completedAt: null,
     createdAt: '2026-10-01T10:00:00.000Z',
     updatedAt: '2026-10-01T10:00:00.000Z',
