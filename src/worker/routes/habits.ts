@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { isISODate } from '../../shared/dates';
 import { normalizeHabitRules } from '../../shared/habits';
@@ -8,6 +8,7 @@ import type { EarnedReward, Habit, HabitWithChecks } from '../../shared/types';
 import { habitChecks, habits } from '../db/schema';
 import type { AppEnv, Db } from '../env';
 import { badRequest, notFound, readBody } from '../http';
+import { loadHabits } from '../services/habits';
 import { payTick } from '../services/rewards';
 import { rewardsContext } from './rewards';
 
@@ -19,22 +20,9 @@ async function findHabit(db: Db, id: string): Promise<Habit> {
 
 /** Habits and their checks (SPEC §7, §8.4). */
 export const habitRoutes = new Hono<AppEnv>()
-  .get('/', async (c) => {
-    const db = c.get('db');
-    const [rows, checks] = await db.batch([
-      db.select().from(habits).orderBy(asc(habits.createdAt)),
-      db.select().from(habitChecks).orderBy(asc(habitChecks.date)),
-    ]);
-    const byHabit = new Map<string, string[]>();
-    for (const check of checks) {
-      const dates = byHabit.get(check.habitId);
-      if (dates) dates.push(check.date);
-      else byHabit.set(check.habitId, [check.date]);
-    }
-    return c.json<HabitWithChecks[]>(
-      rows.map((habit) => ({ ...habit, checks: byHabit.get(habit.id) ?? [] })),
-    );
-  })
+  .get('/', async (c) =>
+    c.json<HabitWithChecks[]>((await loadHabits(c.get('db'), c.get('today'))).habits),
+  )
   .post('/', async (c) => {
     const input = await readBody(c, habitCreateSchema);
     const normalized = normalizeHabitRules(input);
@@ -50,7 +38,7 @@ export const habitRoutes = new Hono<AppEnv>()
       createdAt: new Date().toISOString(),
     };
     await c.get('db').insert(habits).values(habit);
-    return c.json<HabitWithChecks>({ ...habit, checks: [] }, 201);
+    return c.json<HabitWithChecks>({ ...habit, checks: [], frozen: [], armedFreezes: 0 }, 201);
   })
   .patch('/:id', async (c) => {
     const input = await readBody(c, habitUpdateSchema);

@@ -7,6 +7,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import type { EconomyItemType, LedgerKind } from '../../shared/rewards';
+import type { RewardIcon } from '../../shared/shop';
 import type {
   HabitFrequency,
   InventoryItemType,
@@ -188,3 +189,33 @@ export const inventoryItems = sqliteTable(
   },
   (table) => [uniqueIndex('inventory_source_idx').on(table.sourceKey, table.sourceIndex)],
 );
+
+/** My real-life rewards in the Shop (13.6). */
+export const shopRewards = sqliteTable('shop_rewards', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  price: integer('price').notNull(),
+  icon: text('icon').$type<RewardIcon>().notNull(),
+  sortOrder: integer('sort_order').notNull(),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+/** Periods covered by a streak freeze (13.9). One freeze per habit and period. */
+export const freezesUsed = sqliteTable(
+  'freezes_used',
+  {
+    habitId: text('habit_id').notNull(),
+    periodStart: text('period_start').notNull(),
+    inventoryItemId: text('inventory_item_id').notNull().unique(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.habitId, table.periodStart] })],
+);
+
+/** Days all habits are paused (13.9). The date is the key, so a day can't be used twice. */
+export const vacationDays = sqliteTable('vacation_days', {
+  date: text('date').primaryKey(),
+  inventoryItemId: text('inventory_item_id').notNull().unique(),
+  createdAt: text('created_at').notNull(),
+});

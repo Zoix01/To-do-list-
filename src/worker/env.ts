@@ -16,7 +16,7 @@ export interface Env {
   OAUTH_PROVIDER?: OAuthHelpers;
 }
 
-export type Db = DrizzleD1Database<typeof schema>;
+export type Db = DrizzleD1Database<typeof schema> & { $client: D1Database };
 
 export interface AppEnv {
   Bindings: Env;

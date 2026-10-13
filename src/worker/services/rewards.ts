@@ -1,7 +1,8 @@
 import { and, between, count, eq, gte, inArray, isNotNull, sum } from 'drizzle-orm';
 import type { BatchItem } from 'drizzle-orm/batch';
 import { addDays, dateInZone, endOfMonth, mondayOf, startOfMonth } from '../../shared/dates';
-import { GAMIFICATION_START, WEEKLY_BUDGET } from '../../shared/economy';
+import { GAMIFICATION_START } from '../../shared/economy';
+import { shopPrices } from '../../shared/shop';
 import {
   catchUpEntries,
   itemKey,
@@ -38,6 +39,7 @@ import {
   weekSnapshots,
 } from '../db/schema';
 import type { Db, Env } from '../env';
+import { loadEconomy, loadMarks, marksFor, settleAllFreezes } from './inventory';
 
 /*
  * Gamification on the server (SPEC §13): week snapshots, payouts into the
@@ -57,7 +59,6 @@ export function rewardsStart(env: Env): ISODate {
   return env.REWARDS_START ?? GAMIFICATION_START;
 }
 
-const SETTING_BUDGET = 'weeklyBudget';
 const SETTING_CAUGHT_UP = 'catchUpDone';
 
 async function readSetting<T>(db: Db, key: string): Promise<T | undefined> {
@@ -66,7 +67,7 @@ async function readSetting<T>(db: Db, key: string): Promise<T | undefined> {
 }
 
 async function weeklyBudget(db: Db): Promise<number> {
-  return (await readSetting<number>(db, SETTING_BUDGET)) ?? WEEKLY_BUDGET;
+  return (await loadEconomy(db)).weeklyBudget;
 }
 
 // ---------------------------------------------------------------- Week snapshots (13.3)
@@ -279,7 +280,11 @@ export async function payTick(
 ): Promise<EarnedReward> {
   if (ctx.today < ctx.start) return NOTHING;
   const key = `tick:${habit.id}:${date}`;
+  // Freezes and vacation days keep streaks going, so they shape the multiplier and milestones.
+  await settleAllFreezes(ctx.db, ctx.today);
+  const marks = marksFor(await loadMarks(ctx.db), habit.id);
   const reward = tickReward({
+    marks,
     habitId: habit.id,
     rules: habit,
     checksBefore,
@@ -428,8 +433,11 @@ export async function rewardsSummary(ctx: RewardsContext): Promise<RewardsSummar
   const [snapshotRow] = started
     ? await db.select().from(weekSnapshots).where(eq(weekSnapshots.weekStart, weekStart))
     : [];
-  const budget = await weeklyBudget(db);
+  const economy = await loadEconomy(db);
+  const budget = economy.weeklyBudget;
   const xp = Number(totals[0]?.xp ?? 0);
+  await settleAllFreezes(db, today);
+  const marks = await loadMarks(db);
 
   const habitInfo: Record<string, ItemRewardInfo> = {};
   for (const habit of habitRows) {
@@ -441,6 +449,7 @@ export async function rewardsSummary(ctx: RewardsContext): Promise<RewardsSummar
         ? null
         : tickPay({
             rules: habit,
+            marks: marksFor(marks, habit.id),
             checks: new Set(checks).add(today),
             date: today,
             today,
@@ -479,6 +488,9 @@ export async function rewardsSummary(ctx: RewardsContext): Promise<RewardsSummar
       budget: snapshotRow?.budget ?? budget,
     },
     nextBudget: budget,
+    economy,
+    prices: shopPrices(economy),
+    vacationDays: [...marks.vacation].sort(),
     habits: habitInfo,
     weekly: weeklyInfo,
   };

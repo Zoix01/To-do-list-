@@ -15,10 +15,11 @@ import {
 } from '../../shared/assistant';
 import { addDays, dateInZone, isISODate } from '../../shared/dates';
 import type { TaskUpdateInput } from '../../shared/schemas';
-import { PRIORITIES, type HabitWithChecks, type List, type Task } from '../../shared/types';
+import { PRIORITIES, type List, type Task } from '../../shared/types';
 import * as schema from '../db/schema';
-import { habitChecks, habits, lists, tasks } from '../db/schema';
+import { lists, tasks } from '../db/schema';
 import type { Db, Env } from '../env';
+import { loadHabits } from '../services/habits';
 import { createTask, loadOpenTasks, updateTask } from '../services/tasks';
 
 /*
@@ -74,17 +75,6 @@ async function loadLists(db: Db): Promise<List[]> {
   return db.select().from(lists).orderBy(asc(lists.sortOrder));
 }
 
-async function loadHabits(db: Db): Promise<HabitWithChecks[]> {
-  const [rows, checks] = await db.batch([
-    db.select().from(habits).orderBy(asc(habits.createdAt)),
-    db.select().from(habitChecks).orderBy(asc(habitChecks.date)),
-  ]);
-  return rows.map((habit) => ({
-    ...habit,
-    checks: checks.filter((check) => check.habitId === habit.id).map((check) => check.date),
-  }));
-}
-
 function buildServer(db: Db, today: string, timeZone: string): McpServer {
   const server = new McpServer(
     { name: 'planner', title: 'Planner', version: '1.0.0' },
@@ -135,7 +125,7 @@ ${CONCEPTS}`,
               ),
             ),
           loadLists(db),
-          loadHabits(db),
+          loadHabits(db, today).then((loaded) => loaded.habits),
         ]);
         return json(
           buildOverview({
@@ -233,10 +223,10 @@ ${CONCEPTS}`,
     },
     () =>
       run(async () => {
-        const allHabits = await loadHabits(db);
+        const { habits: allHabits, vacation } = await loadHabits(db, today);
         return json({
           today,
-          habits: allHabits.map((habit) => assistantHabit(habit, today)),
+          habits: allHabits.map((habit) => assistantHabit(habit, today, vacation)),
         });
       }),
   );
