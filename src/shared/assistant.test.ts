@@ -196,6 +196,7 @@ describe('buildOverview', () => {
     weekdays: [],
     target: null,
     archived: false,
+    weight: 5,
     createdAt: '2026-10-01T00:00:00.000Z',
     checks: ['2026-10-09', '2026-10-10', '2026-10-11', '2026-10-13'],
   };
@@ -252,6 +253,7 @@ describe('assistantHabit', () => {
       weekdays: [],
       target: 3,
       archived: false,
+      weight: 5,
       createdAt: 'x',
       checks: ['2026-10-05', '2026-10-07', '2026-10-09', '2026-10-12'],
     };

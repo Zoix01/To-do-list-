@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { isISODate } from './dates';
+import { WEIGHT_MAX, WEIGHT_MIN } from './economy';
 import { HABIT_FREQUENCIES, LIST_COLORS, PRIORITIES, RECURRING_MODES } from './types';
 
 const isoDate = z.string().refine(isISODate, 'Must be a date in YYYY-MM-DD format');
 const title = z.string().trim().min(1, 'Title is required').max(500);
 const notes = z.string().max(20_000).nullable();
+/** Share of the weekly coin budget (SPEC §13.3). */
+const weight = z.number().int().min(WEIGHT_MIN).max(WEIGHT_MAX);
 
 export const loginSchema = z.object({ password: z.string().min(1).max(1000) });
 
@@ -48,6 +51,7 @@ export const recurringCreateSchema = z.object({
   mode: z.enum(RECURRING_MODES),
   /** Required for 'fixed'. */
   weekday: weekday.nullable().optional(),
+  weight: weight.optional(),
 });
 export type RecurringCreateInput = z.infer<typeof recurringCreateSchema>;
 
@@ -60,6 +64,7 @@ export const recurringUpdateSchema = z
     mode: z.enum(RECURRING_MODES),
     weekday: weekday.nullable(),
     active: z.boolean(),
+    weight,
   })
   .partial()
   .strict();
@@ -73,6 +78,7 @@ export const habitCreateSchema = z.object({
   frequency: z.enum(HABIT_FREQUENCIES),
   weekdays: z.array(weekday).max(7).optional(),
   target: z.number().int().nullable().optional(),
+  weight: weight.optional(),
 });
 export type HabitCreateInput = z.infer<typeof habitCreateSchema>;
 
@@ -84,6 +90,7 @@ export const habitUpdateSchema = z
     weekdays: z.array(weekday).max(7),
     target: z.number().int().nullable(),
     archived: z.boolean(),
+    weight,
   })
   .partial()
   .strict();

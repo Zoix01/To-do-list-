@@ -113,6 +113,55 @@ export function bestStreak(habit: HabitRules, checks: Checks, today: ISODate): n
   return best;
 }
 
+function containsDate(period: HabitPeriod, date: ISODate): boolean {
+  return period.start <= date && date <= period.end;
+}
+
+/**
+ * Consecutive met periods right before the period containing `date`: the
+ * streak a tick on `date` builds on (Phase 5 streak multiplier, SPEC §13.4).
+ */
+export function streakBefore(habit: HabitRules, checks: Checks, date: ISODate): number {
+  const periods = habitPeriods(habit, checks, earliest(checks, date), date);
+  let i = periods.length - 1;
+  if (i >= 0 && containsDate(periods[i]!, date)) i -= 1;
+  let streak = 0;
+  for (; i >= 0 && periods[i]!.met; i--) streak += 1;
+  return streak;
+}
+
+export interface RunsAround {
+  /** Met periods directly before the period containing `date`. */
+  before: number;
+  /** The run including the period containing `date`, if that period is met. */
+  run: { start: ISODate; length: number } | null;
+  /** Met periods directly after it. */
+  after: number;
+}
+
+/**
+ * The streak runs touching the period that contains `date`, looking at periods
+ * up to `until` (today). A weekdays habit's day off has no period: run is null.
+ */
+export function runsAround(
+  habit: HabitRules,
+  checks: Checks,
+  date: ISODate,
+  until: ISODate,
+): RunsAround {
+  const periods = habitPeriods(habit, checks, earliest(checks, date), maxDate(date, until));
+  const index = periods.findIndex((period) => containsDate(period, date));
+  if (index < 0) return { before: 0, run: null, after: 0 };
+  let first = index;
+  while (first > 0 && periods[first - 1]!.met) first -= 1;
+  let last = index;
+  while (last < periods.length - 1 && periods[last + 1]!.met) last += 1;
+  const before = index - first;
+  const after = last - index;
+  if (!periods[index]!.met) return { before, run: null, after };
+  return { before, run: { start: periods[first]!.start, length: last - first + 1 }, after };
+}
+
 export function isDueToday(habit: HabitRules, checks: Checks, today: ISODate): boolean {
   if (habit.frequency === 'daily') return true;
   if (habit.frequency === 'weekdays') return isScheduled(habit, today);

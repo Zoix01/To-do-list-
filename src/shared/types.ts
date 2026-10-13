@@ -77,6 +77,8 @@ export interface RecurringTask {
   activeFrom: ISODate;
   /** Monday of the latest week already generated (each week is generated once). */
   generatedThrough: ISODate | null;
+  /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
+  weight: number;
   createdAt: Timestamp;
 }
 
@@ -95,6 +97,8 @@ export interface Habit {
   /** Only for 'per_week' (1–7) and 'per_month' (1–31). */
   target: number | null;
   archived: boolean;
+  /** Share of the weekly coin budget, 1–10 (SPEC §13.3). */
+  weight: number;
   createdAt: Timestamp;
 }
 
@@ -112,4 +116,49 @@ export interface ConnectorStatus {
 
 export interface Me {
   timeZone: string;
+}
+
+// ---------------------------------------------------------------- Gamification (SPEC §13)
+
+export type InventoryItemType = 'box' | 'freeze' | 'vacation' | 'charm' | 'reward';
+export type InventoryStatus = 'owned' | 'armed' | 'scheduled' | 'used' | 'opened' | 'consumed';
+export type InventorySource = 'purchase' | 'box' | 'milestone' | 'level';
+
+/** What a habit or weekly task earns right now (Habits and Weekly screens). */
+export interface ItemRewardInfo {
+  /** In this week's snapshot; false = "Earns from Mon". */
+  inSnapshot: boolean;
+  /** Value per completion this week. */
+  value: number | null;
+  /** What a tick today would pay, with its multiplier; null if it pays nothing. */
+  nextTick: { coins: number; multiplier: number } | null;
+}
+
+export interface RewardsSummary {
+  /** First day anything earns. */
+  start: ISODate;
+  started: boolean;
+  coins: number;
+  shards: number;
+  xp: number;
+  level: number;
+  xpIntoLevel: number;
+  xpForNext: number;
+  /** Unopened mystery boxes. */
+  boxes: number;
+  /** Coins earned from ticks and weekly tasks this week, against the budget. */
+  week: { start: ISODate; earned: number; budget: number };
+  /** Budget of the next snapshot, for the "≈ 330 coins per tick from Monday" hints. */
+  nextBudget: number;
+  habits: Record<string, ItemRewardInfo>;
+  weekly: Record<string, ItemRewardInfo>;
+}
+
+/** What a tick or a completed weekly task earned, for the animations. */
+export interface EarnedReward {
+  coins: number;
+  multiplier: number;
+  milestones: { kind: 'streak' | 'count'; threshold: number; boxes: number }[];
+  /** Levels reached by this reward. */
+  levelUps: number[];
 }

@@ -14,6 +14,7 @@ function template(fields: Partial<RecurringTask> = {}): RecurringTask {
     active: true,
     activeFrom: '2026-10-05',
     generatedThrough: null,
+    weight: 5,
     createdAt: '2026-10-05T08:00:00.000Z',
     ...fields,
   };
