@@ -565,7 +565,7 @@ There's no pity rule.
 ### 13.8 Shards
 
 - A separate balance, shown next to coins.
-- Shards buy a **specific missing piece** in the Gallery:
+- Shards buy a **specific missing piece** in the Gallery. Tapping a missing piece asks first ("Buy this piece?", with the artwork in small, the piece outlined in its rarity, the price and the shards left after); a stray tap never spends shards. A missing piece shows as a dark, blurred glimpse of itself with its rarity and price, so it sits naturally in the artwork:
 
 | | Common | Rare | Legendary |
 |---|---|---|---|
@@ -620,7 +620,8 @@ The Habits tab gets a segmented control: **Habits · Shop · Inventory · Galler
 
 **Gallery**
 - Current season at the top: name, days left, "13/24 pieces", and each artwork as its grid.
-- Owned pieces are shown. Missing pieces are dark tiles with a rarity-colored outline and "Buy · 40 shards".
+- Owned pieces are shown. Missing pieces are a dark, blurred glimpse of the piece with its rarity (label and a thin line along the bottom edge) and a price pill; tapping one asks for confirmation (13.8).
+- On desktop the Gallery is wider than other screens (up to 1,240 px, artworks at least 340 px wide); the tabs and the rewards bar keep the usual width.
 - A completed artwork opens full-screen with its title, artist, year and completion date.
 - Past seasons are listed below, newest first.
 

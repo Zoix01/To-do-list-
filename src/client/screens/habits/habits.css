@@ -610,8 +610,22 @@
 .gallery-season__artworks {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-5) var(--space-4);
   align-items: start;
+}
+
+/* On desktop the Gallery takes more of the width (the art is the point); the tabs
+   and the rewards bar above keep the usual width. */
+.app--desktop .main__inner:has(.gallery) {
+  max-width: 1240px;
+}
+
+.app--desktop .main__inner:has(.gallery) > :not(.gallery, .screen-header) {
+  max-width: calc(var(--content-width) - 2 * var(--space-6));
+}
+
+.app--desktop .gallery-season__artworks {
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
 }
 
 .artwork {
@@ -621,6 +635,8 @@
 .artwork__grid {
   display: grid;
   gap: 2px;
+  overflow: hidden;
+  border-radius: var(--radius);
 }
 
 .artwork__caption {
@@ -644,16 +660,18 @@
   background-repeat: no-repeat;
 }
 
+/* A missing piece: a dark, blurred glimpse of itself, its rarity and shard price. */
 .art-missing {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  min-height: 0;
-  border: 1px solid var(--tier-color);
-  background: var(--surface);
   --tier-color: var(--rarity-common);
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
 }
 
 .art-missing--rare {
@@ -664,31 +682,92 @@
   --tier-color: var(--rarity-legendary);
 }
 
+.art-missing__glimpse {
+  position: absolute;
+  inset: -12%;
+  width: auto;
+  filter: blur(10px) saturate(0.5) brightness(0.32);
+  transition: filter var(--duration) var(--ease-out);
+}
+
+/* The rarity as a thin line along the bottom edge. */
+.art-missing::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: var(--tier-color);
+  opacity: 0.8;
+}
+
+.art-missing__label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
 .art-missing__tier {
   color: var(--tier-color);
   font-size: 11px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.art-missing__buy {
+.art-missing__price {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px var(--space-1);
-  border: 0;
-  border-radius: var(--radius);
-  background: transparent;
+  gap: 3px;
+  padding: 2px var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  font-size: var(--text-meta);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out);
+}
+
+button.art-missing {
+  cursor: pointer;
+}
+
+button.art-missing:hover .art-missing__glimpse,
+button.art-missing:focus-visible .art-missing__glimpse {
+  filter: blur(10px) saturate(0.6) brightness(0.45);
+}
+
+button.art-missing:hover .art-missing__price,
+button.art-missing:focus-visible .art-missing__price {
+  border-color: var(--accent);
+  background: var(--ember-soft);
+}
+
+button.art-missing:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.art-missing.is-locked .art-missing__price {
   color: var(--text-muted);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
 }
 
-.art-missing__buy:hover:not(:disabled) {
-  background: var(--surface-raised);
-  color: var(--text);
+/* The confirmation: the artwork in small, the piece to buy outlined in its rarity. */
+.buy-piece__preview {
+  width: min(100%, 260px);
+  margin: 0 auto var(--space-4);
 }
 
-.art-missing__buy:disabled {
-  opacity: 0.6;
+.buy-piece__missing {
+  filter: blur(4px) brightness(0.25);
+}
+
+.buy-piece__target {
+  filter: blur(4px) brightness(0.6);
+  outline: 2px solid var(--tier-color);
+  outline-offset: -2px;
 }
 
 .artwork-full {

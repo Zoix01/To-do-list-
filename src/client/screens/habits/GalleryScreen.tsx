@@ -23,22 +23,77 @@ import './habits.css';
 
 const TIER_NAMES = { common: 'Common', rare: 'Rare', legendary: 'Legendary' } as const;
 
+interface PieceToBuy {
+  artwork: Artwork;
+  pieces: Piece[];
+  piece: Piece;
+  price: number;
+}
+
+/**
+ * A piece not owned yet: a dark, blurred glimpse of it with its rarity and shard
+ * price. Tapping it asks first (SPEC §13.8); without enough shards it's just shown.
+ */
+function MissingPiece({
+  artwork,
+  piece,
+  price,
+  onBuy,
+}: {
+  artwork: Artwork;
+  piece: Piece;
+  price: number;
+  onBuy: (() => void) | null;
+}) {
+  const content = (
+    <>
+      <ArtPiece artwork={artwork} index={piece.index} className="art-missing__glimpse" />
+      <span className="art-missing__label">
+        <span className="art-missing__tier">{TIER_NAMES[piece.tier]}</span>
+        <span className="art-missing__price mono-figures">
+          <Gem size={11} aria-hidden="true" /> {price}
+        </span>
+      </span>
+    </>
+  );
+  const className = `art-missing art-missing--${piece.tier}`;
+  const style = {
+    aspectRatio: `${artwork.width / artwork.cols} / ${artwork.height / artwork.rows}`,
+  };
+  return onBuy ? (
+    <button
+      type="button"
+      className={className}
+      style={style}
+      aria-label={`Buy this ${piece.tier} piece for ${price} shards`}
+      onClick={onBuy}
+    >
+      {content}
+    </button>
+  ) : (
+    <span className={`${className} is-locked`} style={style} title="Not enough shards">
+      {content}
+    </span>
+  );
+}
+
 function ArtworkGrid({
   artwork,
   pieces,
   owned,
   current,
   onOpen,
+  onBuy,
 }: {
   artwork: Artwork;
   pieces: Piece[];
   owned: Map<string, OwnedPiece>;
   current: Season | null;
   onOpen: () => void;
+  onBuy: (piece: PieceToBuy) => void;
 }) {
   const { canEdit } = useApp();
   const { data: rewards } = useRewards();
-  const { buyPiece } = useInventoryMutations();
   const complete = pieces.every((piece) => owned.has(piece.id));
   return (
     <figure
@@ -73,24 +128,13 @@ function ArtworkGrid({
           const price = piecePrice(piece, current);
           const affordable = (rewards?.shards ?? 0) >= price;
           return (
-            <span
+            <MissingPiece
               key={piece.id}
-              className={`art-missing art-missing--${piece.tier}`}
-              style={{
-                aspectRatio: `${artwork.width / artwork.cols} / ${artwork.height / artwork.rows}`,
-              }}
-            >
-              <span className="art-missing__tier">{TIER_NAMES[piece.tier]}</span>
-              <button
-                type="button"
-                className="art-missing__buy"
-                disabled={!canEdit || !affordable}
-                title={affordable ? undefined : 'Not enough shards'}
-                onClick={() => buyPiece.mutate(piece.id)}
-              >
-                Buy · <Gem size={11} aria-hidden="true" /> {price}
-              </button>
-            </span>
+              artwork={artwork}
+              piece={piece}
+              price={price}
+              onBuy={canEdit && affordable ? () => onBuy({ artwork, pieces, piece, price }) : null}
+            />
           );
         })}
       </div>
@@ -101,16 +145,90 @@ function ArtworkGrid({
   );
 }
 
+/** Buying a piece with shards is confirmed first: a stray tap shouldn't spend them. */
+function BuyPieceDialog({
+  buying,
+  owned,
+  onClose,
+}: {
+  buying: PieceToBuy | null;
+  owned: Map<string, OwnedPiece>;
+  onClose: () => void;
+}) {
+  const { data: rewards } = useRewards();
+  const { buyPiece } = useInventoryMutations();
+  const shards = rewards?.shards ?? 0;
+  return (
+    <Dialog open={buying !== null} onClose={onClose} title="Buy this piece?">
+      {buying && (
+        <>
+          <div
+            className="artwork__grid buy-piece__preview"
+            style={{ gridTemplateColumns: `repeat(${buying.artwork.cols}, minmax(0, 1fr))` }}
+            aria-hidden="true"
+          >
+            {buying.pieces.map((piece) =>
+              owned.has(piece.id) ? (
+                <ArtPiece key={piece.id} artwork={buying.artwork} index={piece.index} />
+              ) : (
+                <ArtPiece
+                  key={piece.id}
+                  artwork={buying.artwork}
+                  index={piece.index}
+                  className={
+                    piece.id === buying.piece.id
+                      ? `buy-piece__target art-missing--${piece.tier}`
+                      : 'buy-piece__missing'
+                  }
+                />
+              ),
+            )}
+          </div>
+          <p>
+            A {buying.piece.tier} piece for{' '}
+            <span className="mono-figures">
+              <Gem size={13} aria-hidden="true" /> {buying.price}
+            </span>{' '}
+            shards.
+          </p>
+          <p className="muted">
+            You have <span className="mono-figures">{shards}</span>;{' '}
+            <span className="mono-figures">{shards - buying.price}</span> left after.
+          </p>
+        </>
+      )}
+      <div className="dialog__actions">
+        <button type="button" className="button" onClick={onClose}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="button button--primary"
+          disabled={!buying || shards < buying.price}
+          onClick={() => {
+            if (buying) buyPiece.mutate(buying.piece.id);
+            onClose();
+          }}
+        >
+          Buy
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
 function SeasonSection({
   season,
   owned,
   current,
   onOpen,
+  onBuy,
 }: {
   season: Season;
   owned: Map<string, OwnedPiece>;
   current: Season | null;
   onOpen: (artwork: Artwork) => void;
+  onBuy: (piece: PieceToBuy) => void;
 }) {
   const { today } = useApp();
   const pieces = piecesOf(season);
@@ -138,6 +256,7 @@ function SeasonSection({
             owned={owned}
             current={current}
             onOpen={() => onOpen(artwork)}
+            onBuy={onBuy}
           />
         ))}
       </div>
@@ -152,6 +271,7 @@ export function GalleryScreen() {
   const all = rewards ? seasonsFrom(rewards.seasonStart) : SEASONS;
   const { data: ownedList } = useGallery();
   const [viewing, setViewing] = useState<Artwork | null>(null);
+  const [buying, setBuying] = useState<PieceToBuy | null>(null);
   const owned = new Map((ownedList ?? []).map((piece) => [piece.pieceId, piece]));
   const current = currentSeason(all, today);
   const seasons = startedSeasons(all, today);
@@ -173,15 +293,19 @@ export function GalleryScreen() {
           The first season starts on {formatShortDate(all[0]?.start ?? today)}.
         </p>
       )}
-      {seasons.map((season) => (
-        <SeasonSection
-          key={season.id}
-          season={season}
-          owned={owned}
-          current={current}
-          onOpen={setViewing}
-        />
-      ))}
+      <div className="gallery">
+        {seasons.map((season) => (
+          <SeasonSection
+            key={season.id}
+            season={season}
+            owned={owned}
+            current={current}
+            onOpen={setViewing}
+            onBuy={setBuying}
+          />
+        ))}
+      </div>
+      <BuyPieceDialog buying={buying} owned={owned} onClose={() => setBuying(null)} />
 
       <Dialog
         open={viewing !== null}
