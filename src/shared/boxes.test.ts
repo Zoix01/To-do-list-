@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { canUseCharm, openBox, pouchCoins, rollPiece, seededRng, type BoxContext } from './boxes';
+import {
+  canUseCharm,
+  openBox,
+  pouchCoins,
+  rollPiece,
+  secureRng,
+  seededRng,
+  type BoxContext,
+} from './boxes';
 import { BOX_ODDS, TIER_ODDS } from './economy';
 import {
   currentSeason,
@@ -98,6 +106,20 @@ describe('mystery boxes: 100,000 openings (13.7)', () => {
 
   it.each(Object.entries(TIER_ODDS))('%s pieces within ±0.5%', (tier, odds) => {
     expect(Math.abs((tiers[tier] ?? 0) / counts.piece! - odds)).toBeLessThan(0.005);
+  });
+
+  it('the server’s secure generator gives the same piece rarities (±1%)', () => {
+    const rarities: Record<string, number> = {};
+    let pieces = 0;
+    for (let i = 0; i < N; i++) {
+      const result = openBox(secureRng, context());
+      if (result.type !== 'piece') continue;
+      pieces++;
+      rarities[result.tier] = (rarities[result.tier] ?? 0) + 1;
+    }
+    for (const [tier, odds] of Object.entries(TIER_ODDS)) {
+      expect(Math.abs((rarities[tier] ?? 0) / pieces - odds)).toBeLessThan(0.01);
+    }
   });
 
   it('coin pouch: mean 1.5× the box price (±3%), between 0.1× and 5×', () => {
