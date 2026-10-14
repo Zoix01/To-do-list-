@@ -3,9 +3,9 @@ import type { ISODate, Task, TaskFlag } from './types';
 
 /**
  * A task appears in the calendar up to twice (SPEC §8.2):
- * - "planned": filled chip on the planned date, draggable
- * - "deadline": outlined chip with a flag on the deadline, not draggable
- * - "both": one combined chip when planned date = deadline (draggable)
+ * - "planned": filled chip on the planned date; dragging it moves the planned date
+ * - "deadline": outlined chip with a flag on the deadline; dragging it moves the deadline
+ * - "both": one combined chip when planned date = deadline; dragging it moves the planned date
  */
 export type EntryKind = 'planned' | 'deadline' | 'both';
 
@@ -18,7 +18,8 @@ export interface CalendarEntry {
   flag: TaskFlag;
   /** Planned entry that lies after the task's deadline (shown with a warning). */
   afterDeadline: boolean;
-  draggable: boolean;
+  /** What dragging this entry to another day changes. */
+  moves: 'plannedDate' | 'deadline';
   /** Position within a day: overdue first, then by deadline and title. */
   order: number;
 }
@@ -37,7 +38,7 @@ export function calendarEntries(tasks: readonly Task[], today: ISODate): Calenda
       kind,
       flag,
       afterDeadline: kind === 'planned' && isPlannedAfterDeadline(task),
-      draggable: kind !== 'deadline',
+      moves: kind === 'deadline' ? 'deadline' : 'plannedDate',
       order,
     });
     if (task.plannedDate === task.deadline) {
@@ -57,7 +58,7 @@ export function unplannedTasks<T extends Task>(tasks: readonly T[], today: ISODa
     .sort((a, b) => compareByDeadline(a, b, today));
 }
 
-/** Drops (planning a task on a day) are only allowed for today or later. */
+/** Drops (planning a task on a day, or moving its deadline) are only allowed for today or later. */
 export function canPlanOn(date: ISODate, today: ISODate): boolean {
   return date >= today;
 }

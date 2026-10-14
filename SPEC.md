@@ -127,7 +127,7 @@ Phase 1 creates `List`, `Task` (including the `recurringId` / `weekStart` column
 - I can change the planned date (in the form or by dragging in the calendar); this sets `plannedManual = true`. I can also clear it ("unplan"), which sets `plannedDate = null`, `plannedManual = true`.
 - A planned date after the deadline is allowed, but the task shows a warning icon ("planned after deadline").
 - **No past planned dates:** setting a planned date before today is rejected — in the form (past days are not selectable), by calendar drops (§8.2), in the API, and (Phase 4) in the MCP tools. Clearing it ("unplan") is always allowed, and an existing past planned date may stay while other fields are edited.
-- The deadline is only changed in the task form, never by dragging.
+- The deadline can be changed in the task form or by dragging its deadline chip in the calendar (§8.2); a drop on a past day is rejected like any past deadline.
 
 ### 5.2 Overdue flags (two levels)
 For an uncompleted task, with `today` in Europe/Prague:
@@ -237,12 +237,12 @@ The metadata follows the title directly (not right-aligned), so everything is re
 ### 8.2 Calendar
 - **Month** and **Week** views, toggle at the top. On phone it opens on Week, on desktop on Month.
 - **Week on phones** is a **vertical day list**: 7 stacked rows (Monday at the top), each showing that day's chips at full width so titles stay readable. Chips are dragged between rows with a long-press. Desktop Week (and Month everywhere) uses the normal FullCalendar day grid.
-- **Past days don't accept drops** (planned entries or tray items): you can only plan for today or later.
+- **Past days don't accept drops** (planned entries, deadline entries or tray items): you can only plan for today or later, and deadlines can't be in the past.
 - **Planning after the deadline is allowed**, but: the planned chip shows an amber warning badge, and a drop that lands after the deadline shows the message "Planned after the deadline (Wed 14 Oct) · Undo". Undo restores the previous planned date, or unplans the task if it had none (or if the old one has passed).
 - Each uncompleted task can appear twice:
   - **Planned entry** — filled chip in the list color, draggable to any day (sets `plannedDate`, `plannedManual = true`).
-  - **Deadline entry** — outlined chip with a flag icon, same color, **not** draggable.
-  - If planned date = deadline, show one chip with both styles combined (filled + flag).
+  - **Deadline entry** — outlined chip with a flag icon, same color, draggable to today or later (sets `deadline`; the planned date stays). The drop shows "Deadline moved to Fri 16 Oct · Undo" (no Undo when the old deadline has already passed, since it can't be set again).
+  - If planned date = deadline, show one chip with both styles combined (filled + flag). Dragging it moves the **planned date**; the deadline is then moved by dragging its own chip or in the form.
 - Overdue chips show their red/orange flag.
 - Completing a task from a calendar chip (checkbox inside the chip or in the popup on tap) removes both entries.
 - A side tray (desktop) / bottom sheet (phone) lists **unplanned tasks** (including flexible weekly instances) that I can drag onto a day.

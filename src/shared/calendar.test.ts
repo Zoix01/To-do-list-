@@ -35,25 +35,25 @@ describe('calendarEntries', () => {
         id: `${t.id}:planned`,
         date: '2026-10-15',
         kind: 'planned',
-        draggable: true,
+        moves: 'plannedDate',
       }),
       expect.objectContaining({
         id: `${t.id}:deadline`,
         date: '2026-10-20',
         kind: 'deadline',
-        draggable: false,
+        moves: 'deadline',
       }),
     ]);
   });
 
-  it('combines both into one draggable entry when planned date = deadline', () => {
+  it('combines both into one entry that moves the planned date when planned date = deadline', () => {
     const t = task({ deadline: '2026-10-20', plannedDate: '2026-10-20' });
     expect(calendarEntries([t], TODAY)).toEqual([
       expect.objectContaining({
         id: `${t.id}:both`,
         date: '2026-10-20',
         kind: 'both',
-        draggable: true,
+        moves: 'plannedDate',
       }),
     ]);
   });

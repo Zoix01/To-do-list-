@@ -396,6 +396,25 @@ export function useTaskMutations() {
     onSettled: invalidate,
   });
 
+  /** Moves the deadline; shown right away, e.g. after a calendar drop of a deadline chip. */
+  const reschedule = useMutation({
+    mutationFn: ({ id, deadline }: { id: string; deadline: string }) =>
+      api<Task>(`/tasks/${id}`, { method: 'PATCH', body: { deadline } }),
+    onMutate: async ({ id, deadline }) => {
+      await queryClient.cancelQueries({ queryKey: keys.openTasks });
+      const previous = queryClient.getQueryData<Task[]>(keys.openTasks);
+      queryClient.setQueryData<Task[]>(keys.openTasks, (tasks) =>
+        tasks?.map((task) => (task.id === id ? { ...task, deadline } : task)),
+      );
+      return () => queryClient.setQueryData(keys.openTasks, previous);
+    },
+    onError: (error, _vars, restore) => {
+      restore?.();
+      onError(error);
+    },
+    onSettled: invalidate,
+  });
+
   /** Changes the priority; shown right away, e.g. after a drop in the Priority view. */
   const reprioritize = useMutation({
     mutationFn: ({ id, priority }: { id: string; priority: Priority }) =>
@@ -434,7 +453,17 @@ export function useTaskMutations() {
     onSettled: invalidate,
   });
 
-  return { create, update, complete, uncomplete, remove, removeCompleted, plan, reprioritize };
+  return {
+    create,
+    update,
+    complete,
+    uncomplete,
+    remove,
+    removeCompleted,
+    plan,
+    reschedule,
+    reprioritize,
+  };
 }
 
 export function useListMutations() {

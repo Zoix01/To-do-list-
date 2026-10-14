@@ -20,6 +20,9 @@ import { LONG_PRESS_MS } from './UnplannedTray';
 
 interface DragData {
   taskId: string;
+  /** Tray items are unplanned, so dropping them plans them. */
+  moves?: CalendarEntry['moves'];
+  entryKind?: CalendarEntry['kind'];
 }
 
 function chipColor(task: Task, listsById: Map<string, { color: string }>): string | null {
@@ -38,8 +41,8 @@ function WeekChip({
   const { listsById, canEdit } = useApp();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: entry.id,
-    data: { taskId: entry.taskId } satisfies DragData,
-    disabled: !canEdit || !entry.draggable,
+    data: { taskId: entry.taskId, moves: entry.moves, entryKind: entry.kind } satisfies DragData,
+    disabled: !canEdit,
   });
   return (
     <button
@@ -99,6 +102,7 @@ export function PhoneWeek({
   onOpen,
   onDayTap,
   onPlan,
+  onMoveDeadline,
   tray,
 }: {
   dates: ISODate[];
@@ -107,27 +111,28 @@ export function PhoneWeek({
   onOpen: (taskId: string) => void;
   onDayTap: (date: ISODate) => void;
   onPlan: (taskId: string, date: ISODate) => void;
+  onMoveDeadline: (taskId: string, date: ISODate) => void;
   /** The unplanned tray; rendered inside the drag context so its items can be dropped here. */
   tray: ReactNode;
 }) {
   const { today, listsById } = useApp();
-  const [dragging, setDragging] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<DragData | null>(null);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: LONG_PRESS_MS, tolerance: 8 } }),
   );
 
-  const onDragStart = ({ active }: DragStartEvent) =>
-    setDragging((active.data.current as DragData).taskId);
+  const onDragStart = ({ active }: DragStartEvent) => setDragging(active.data.current as DragData);
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     setDragging(null);
     const date = over ? String(over.id) : null;
-    const taskId = (active.data.current as DragData).taskId;
+    const { taskId, moves } = active.data.current as DragData;
     if (!date || !canPlanOn(date, today)) return;
-    if (tasksById.get(taskId)?.plannedDate !== date) onPlan(taskId, date);
+    if (moves === 'deadline') onMoveDeadline(taskId, date);
+    else if (tasksById.get(taskId)?.plannedDate !== date) onPlan(taskId, date);
   };
 
-  const draggedTask = dragging ? tasksById.get(dragging) : undefined;
+  const draggedTask = dragging ? tasksById.get(dragging.taskId) : undefined;
 
   return (
     <DndContext
@@ -157,7 +162,7 @@ export function PhoneWeek({
           <span className="week-chip week-chip--overlay">
             <CalendarChip
               task={draggedTask}
-              kind="planned"
+              kind={dragging?.entryKind ?? 'planned'}
               flag={null}
               color={chipColor(draggedTask, listsById)}
             />

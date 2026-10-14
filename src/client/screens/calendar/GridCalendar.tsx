@@ -20,6 +20,7 @@ interface EntryProps {
   kind: EntryKind;
   flag: TaskFlag;
   afterDeadline: boolean;
+  moves: CalendarEntry['moves'];
 }
 
 /** Month and desktop-week views, built on FullCalendar's day grid. */
@@ -31,6 +32,7 @@ export function GridCalendar({
   onOpen,
   onDayTap,
   onPlan,
+  onMoveDeadline,
 }: {
   view: 'dayGridMonth' | 'dayGridWeek';
   anchor: ISODate;
@@ -39,6 +41,7 @@ export function GridCalendar({
   onOpen: (taskId: string) => void;
   onDayTap: (date: ISODate) => void;
   onPlan: (taskId: string, date: ISODate) => void;
+  onMoveDeadline: (taskId: string, date: ISODate) => void;
 }) {
   const { today, listsById, canEdit } = useApp();
   const controller = useCalendarController();
@@ -56,7 +59,7 @@ export function GridCalendar({
         start: entry.date,
         allDay: true,
         title: tasksById.get(entry.taskId)?.title ?? '',
-        editable: canEdit && entry.draggable,
+        editable: canEdit,
         color: 'transparent',
         order: entry.order,
         extendedProps: {
@@ -64,6 +67,7 @@ export function GridCalendar({
           kind: entry.kind,
           flag: entry.flag,
           afterDeadline: entry.afterDeadline,
+          moves: entry.moves,
         },
       })),
     [entries, tasksById, canEdit],
@@ -113,7 +117,10 @@ export function GridCalendar({
           const date = info.event.startStr;
           // The data is the source of truth: put the chip back and let the update move it.
           info.revert();
-          if (canPlanOn(date, today)) onPlan((info.event.extendedProps as EntryProps).taskId, date);
+          if (!canPlanOn(date, today)) return;
+          const { taskId, moves } = info.event.extendedProps as EntryProps;
+          if (moves === 'deadline') onMoveDeadline(taskId, date);
+          else onPlan(taskId, date);
         }}
         eventReceive={(info) => {
           const date = info.event.startStr;

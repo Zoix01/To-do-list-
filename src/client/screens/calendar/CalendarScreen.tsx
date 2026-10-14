@@ -28,7 +28,7 @@ export function CalendarScreen() {
   const { today, canEdit } = useApp();
   const isDesktop = useIsDesktop();
   const { data } = useOpenTasks();
-  const { plan } = useTaskMutations();
+  const { plan, reschedule } = useTaskMutations();
   const { openNew } = useTaskForm();
   const { showUndo } = useFeedback();
 
@@ -61,6 +61,19 @@ export function CalendarScreen() {
         task.plannedDate && canPlanOn(task.plannedDate, today) ? task.plannedDate : null;
       showUndo(`Planned after the deadline (${formatShortDate(task.deadline)})`, () =>
         plan.mutate({ id: taskId, plannedDate: previous }),
+      );
+    }
+  };
+
+  const onMoveDeadline = (taskId: string, date: ISODate) => {
+    const task = tasksById.get(taskId);
+    if (!canEdit || !task || date === task.deadline) return;
+    reschedule.mutate({ id: taskId, deadline: date });
+    // A past deadline can't be set again, so only an upcoming one can be undone.
+    const previous = task.deadline;
+    if (canPlanOn(previous, today)) {
+      showUndo(`Deadline moved to ${formatShortDate(date)}`, () =>
+        reschedule.mutate({ id: taskId, deadline: previous }),
       );
     }
   };
@@ -128,6 +141,7 @@ export function CalendarScreen() {
           onOpen={setPeekId}
           onDayTap={onDayTap}
           onPlan={onPlan}
+          onMoveDeadline={onMoveDeadline}
           tray={tray}
         />
       ) : (
@@ -140,6 +154,7 @@ export function CalendarScreen() {
             onOpen={setPeekId}
             onDayTap={onDayTap}
             onPlan={onPlan}
+            onMoveDeadline={onMoveDeadline}
           />
           {tray}
         </div>
