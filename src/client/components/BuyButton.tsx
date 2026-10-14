@@ -1,9 +1,8 @@
-import { Check } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 /**
- * A Buy button that answers the tap (SPEC §13.10): it presses in, waits for
- * the server, then flashes "Bought" in the darker ember for a moment.
+ * A Buy button that answers the tap (SPEC §13.10): it presses in and waits for
+ * the server; the bought item then flies to the Inventory tab (see ShopScreen).
  */
 export function BuyButton({
   onBuy,
@@ -19,37 +18,21 @@ export function BuyButton({
   label?: string;
   children?: ReactNode;
 }) {
-  const [state, setState] = useState<'idle' | 'pending' | 'bought'>('idle');
-
-  useEffect(() => {
-    if (state !== 'bought') return;
-    const timer = window.setTimeout(() => setState('idle'), 1300);
-    return () => window.clearTimeout(timer);
-  }, [state]);
-
+  const [pending, setPending] = useState(false);
   return (
     <button
       type="button"
-      className={`button buy-button is-${state}`}
-      disabled={disabled || state !== 'idle'}
+      className={pending ? 'button buy-button is-pending' : 'button buy-button'}
+      disabled={disabled || pending}
       title={title}
       aria-label={label}
-      aria-live="polite"
       onClick={() => {
-        setState('pending');
-        onBuy().then(
-          () => setState('bought'),
-          () => setState('idle'),
-        );
+        setPending(true);
+        const done = () => setPending(false);
+        onBuy().then(done, done);
       }}
     >
-      {state === 'bought' ? (
-        <>
-          <Check size={14} aria-hidden="true" /> Bought
-        </>
-      ) : (
-        children
-      )}
+      {children}
     </button>
   );
 }

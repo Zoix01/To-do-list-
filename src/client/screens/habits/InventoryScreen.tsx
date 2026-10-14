@@ -1,5 +1,5 @@
 import { Clover, Package, Snowflake, TreePalm } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { dateInZone, formatShortDate } from '../../../shared/dates';
 import { formatStreak } from '../../../shared/habits';
 import type { RewardIcon } from '../../../shared/shop';
@@ -7,12 +7,25 @@ import type { HabitFrequency, HistoryEntry, InventoryItem } from '../../../share
 import { ScreenHeader } from '../../components/AppShell';
 import { Dialog } from '../../components/Dialog';
 import { useApp } from '../../lib/appContext';
+import { burstIcon, flyToTab, snapshotIcon, type IconSnapshot } from '../../lib/motion';
 import { useHabits, useInventory, useInventoryMutations } from '../../lib/queries';
 import { RewardIconView } from '../../lib/rewardIcons';
 import { formatBoxes, formatCoins } from '../../lib/rewards';
 import { BoxOpenDialog } from './BoxOpenDialog';
 import { HabitsNav } from './HabitsNav';
 import './habits.css';
+
+/** The icon of the row whose button was tapped, for the "use" animation. */
+const rowIcon = (event: MouseEvent) =>
+  snapshotIcon(
+    (event.currentTarget as HTMLElement)
+      .closest('.shop-row')
+      ?.querySelector('.shop-row__icon svg') ?? null,
+  );
+
+/** Runs an action and animates the item once the server has agreed (errors are shown elsewhere). */
+const thenAnimate = (action: Promise<unknown>, animate: () => void) =>
+  action.then(animate, () => {});
 
 function ItemRow({
   icon,
@@ -45,7 +58,15 @@ function ItemRow({
 }
 
 /** Pick the habit a freeze protects (SPEC §13.9). */
-function ArmDialog({ freeze, onClose }: { freeze: InventoryItem | null; onClose: () => void }) {
+function ArmDialog({
+  freeze,
+  onClose,
+  onDone,
+}: {
+  freeze: InventoryItem | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const { data: habits } = useHabits();
   const { arm } = useInventoryMutations();
   const active = (habits ?? []).filter((habit) => !habit.archived);
@@ -62,7 +83,8 @@ function ArmDialog({ freeze, onClose }: { freeze: InventoryItem | null; onClose:
               type="button"
               className="choice-list__option"
               onClick={() => {
-                if (freeze) arm.mutate({ id: freeze.id, habitId: habit.id });
+                if (freeze)
+                  thenAnimate(arm.mutateAsync({ id: freeze.id, habitId: habit.id }), onDone);
                 onClose();
               }}
             >
@@ -86,7 +108,15 @@ function ArmDialog({ freeze, onClose }: { freeze: InventoryItem | null; onClose:
 }
 
 /** Pick the day of a vacation day: today or later, one not taken yet. */
-function VacationDialog({ item, onClose }: { item: InventoryItem | null; onClose: () => void }) {
+function VacationDialog({
+  item,
+  onClose,
+  onDone,
+}: {
+  item: InventoryItem | null;
+  onClose: () => void;
+  onDone: () => void;
+}) {
   const { today } = useApp();
   const { planVacation } = useInventoryMutations();
   const [date, setDate] = useState(today);
@@ -110,7 +140,7 @@ function VacationDialog({ item, onClose }: { item: InventoryItem | null; onClose
           className="button button--primary"
           disabled={!date || date < today}
           onClick={() => {
-            if (item) planVacation.mutate({ id: item.id, date });
+            if (item) thenAnimate(planVacation.mutateAsync({ id: item.id, date }), onDone);
             onClose();
           }}
         >
@@ -213,6 +243,9 @@ export function InventoryScreen() {
   const [openingBox, setOpeningBox] = useState<string | null>(null);
   const [arming, setArming] = useState<InventoryItem | null>(null);
   const [planning, setPlanning] = useState<InventoryItem | null>(null);
+  // The icon tapped before a dialog opened; it flies to the Habits tab once the item is used.
+  const flight = useRef<IconSnapshot | null>(null);
+  const flyToHabits = () => flyToTab(flight.current, '/habits');
   const items = inventory?.items ?? [];
   const of = (type: InventoryItem['type'], status: InventoryItem['status']) =>
     items.filter((item) => item.type === type && item.status === status);
@@ -279,7 +312,10 @@ export function InventoryScreen() {
                     type="button"
                     className="button"
                     disabled={!canEdit}
-                    onClick={() => setArming(freezes[0]!)}
+                    onClick={(event) => {
+                      flight.current = rowIcon(event);
+                      setArming(freezes[0]!);
+                    }}
                   >
                     Use
                   </button>
@@ -322,7 +358,10 @@ export function InventoryScreen() {
                     type="button"
                     className="button"
                     disabled={!canEdit}
-                    onClick={() => setPlanning(vacations[0]!)}
+                    onClick={(event) => {
+                      flight.current = rowIcon(event);
+                      setPlanning(vacations[0]!);
+                    }}
                   >
                     Use
                   </button>
@@ -378,7 +417,10 @@ export function InventoryScreen() {
                     className="button"
                     disabled={!canEdit || Boolean(activeCharm)}
                     title={activeCharm ? 'A lucky charm is already active' : undefined}
-                    onClick={() => useCharm.mutate(charms[0]!.id)}
+                    onClick={(event) => {
+                      const icon = rowIcon(event);
+                      thenAnimate(useCharm.mutateAsync(charms[0]!.id), () => burstIcon(icon));
+                    }}
                   >
                     Use
                   </button>
@@ -404,7 +446,10 @@ export function InventoryScreen() {
                     type="button"
                     className="button"
                     disabled={!canEdit}
-                    onClick={() => useReward.mutate(item.id)}
+                    onClick={(event) => {
+                      const icon = rowIcon(event);
+                      thenAnimate(useReward.mutateAsync(item.id), () => burstIcon(icon));
+                    }}
                   >
                     Use
                   </button>
@@ -420,7 +465,7 @@ export function InventoryScreen() {
         {inventory && <History entries={inventory.history} />}
       </section>
 
-      <ArmDialog freeze={arming} onClose={() => setArming(null)} />
+      <ArmDialog freeze={arming} onClose={() => setArming(null)} onDone={flyToHabits} />
       <BoxOpenDialog
         boxId={openingBox}
         onClose={() => setOpeningBox(null)}
@@ -430,6 +475,7 @@ export function InventoryScreen() {
         key={planning?.id ?? 'none'}
         item={planning}
         onClose={() => setPlanning(null)}
+        onDone={flyToHabits}
       />
     </>
   );

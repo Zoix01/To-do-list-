@@ -1001,26 +1001,6 @@
   opacity: 1;
 }
 
-.buy-button.is-bought {
-  border-color: var(--ember-deep);
-  background: var(--ember-deep);
-  color: var(--text);
-  opacity: 1;
-  animation: buy-pop 360ms var(--ease-out);
-}
-
-@keyframes buy-pop {
-  0% {
-    transform: scale(0.92);
-  }
-  50% {
-    transform: scale(1.06);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
 /* The coins in the header after a purchase: a short ember flash and "−1,250" drifting down. */
 .rewards-bar__coins {
   position: relative;
@@ -1056,12 +1036,28 @@
   }
 }
 
-/* A bought item flies to the Inventory tab, which bumps when it lands. */
+/* A bought item flies to the Inventory tab, which bumps when it lands; a used one
+   flies to the Habits tab or bursts into ember sparks (lib/motion.ts). */
 .fly-icon {
   position: fixed;
   z-index: 100;
   color: var(--accent);
   pointer-events: none;
+}
+
+.burst-spark {
+  position: fixed;
+  z-index: 100;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 70%, transparent);
+  pointer-events: none;
+}
+
+.burst-spark--deep {
+  background: var(--ember-deep);
 }
 
 .habits-nav .segmented__option.is-receiving {
@@ -1083,7 +1079,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buy-button.is-bought,
   .habits-nav .segmented__option.is-receiving {
     animation: reward-fade 300ms linear !important;
   }
